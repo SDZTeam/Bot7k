@@ -5,12 +5,20 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 import json
-from config import TELEGRAM_BOT_TOKEN, ADMIN_ID
+from telethon import TelegramClient
+import asyncio
+import sqlite3
+import os
+from config import TELEGRAM_BOT_TOKEN, ADMIN_ID, API_ID, API_HASH
 
 # Инициализация бота
 storage = MemoryStorage()
-bot = Bot(token=TELEGRAM_BOT_TOKEN)
+bot = Bot(token=TELEGRAF_BOT_TOKEN)
 dp = Dispatcher(bot, storage=storage)
+
+# Настройки для Telethon
+SESSION_DIR = "sessions/"
+os.makedirs(SESSION_DIR, exist_ok=True)  # Создаём папку, если её нет
 
 # База данных для хранения групп, чатов и аккаунтов
 class Database:
@@ -61,6 +69,74 @@ class Database:
 
 db = Database()
 
+# Главное меню
+main_menu = ReplyKeyboardMarkup(resize_keyboard=True)
+main_menu.add(KeyboardButton("Чаты"), KeyboardButton("Аккаунты"))
+
+# Меню чатов
+chats_menu = ReplyKeyboardMarkup(resize_keyboard=True)
+chats_menu.add(KeyboardButton("Добавить чат"), KeyboardButton("Удалить чат"))
+chats_menu.add(KeyboardButton("Просмотреть чаты"), KeyboardButton("Главное меню"))
+
+# Меню аккаунтов
+accounts_menu = ReplyKeyboardMarkup(resize_keyboard=True)
+accounts_menu.add(KeyboardButton("Создать аккаунт"), KeyboardButton("Просмотреть аккаунты"))
+accounts_menu.add(KeyboardButton("Отправить сообщение"), KeyboardButton("Главное меню"))
+
+# Состояния для FSM
+class Form(StatesGroup):
+    add_group_chat = State()  # Добавление чата в группу
+    remove_group_chat = State()  # Удаление чата из группы
+    create_account = State()  # Создание аккаунта
+    add_message = State()  # Добавление сообщения к аккаунту
+    send_message = State()  # Отправка сообщения через Telethon
+
+# Обработчик команды /start
+@dp.message_handler(commands=['start'])
+async def start_command(message: types.Message):
+    if message.from_user.id == ADMIN_ID:
+        await message.answer("Вы вошли как администратор.", reply_markup=main_menu)
+    else:
+        await message.answer("Вы не имеете доступа к этому боту.")
+
+# Обработчик кнопки "Отправить сообщение"
+@dp.message_handler(lambda message: message.text == "Отправить сообщение", state="*")
+async def send_message_handler(message: types.Message):
+    await Form.send_message.set()
+    await message.answer("Введите номер аккаунта, получателя (username или ID) и текст сообщения через пробел (например, '1 @username Привет!').")
+
+@dp.message_handler(state=Form.send_message)
+async def process_send_message(message: types.Message, state: FSMContext):
+    try:
+        account_index, recipient, message_text = message.text.split(maxsplit=2)
+        account_index = int(account_index) - 1  # Преобразуем номер аккаунта в индекс
+
+        # Проверяем, существует ли аккаунт
+        accounts = db.get_accounts()
+        if not (0 <= account_index < len(accounts)):
+            await message.answer("Неверный номер аккаунта.")
+            return
+
+        # Получаем токен аккаунта
+        account_token = accounts[account_index]["token"]
+
+        # Создаем клиент Telethon
+        session_file = os.path.join(SESSION_DIR, account_token)
+        client = TelegramClient(session_file, API_ID, API_HASH)
+
+        async with client:
+            if not await client.is_user_authorized():
+                await message.answer("Аккаунт не авторизован. Требуется ручная авторизация.")
+                return
+
+            # Отправляем сообщение
+            await client.send_message(recipient, message_text)
+            await message.answer(f"Сообщение '{message_text}' успешно отправлено получателю {recipient}.")
+
+    except ValueError:
+        await message.answer("Неверный формат ввода. Введите номер аккаунта, получателя и текст сообщения через пробел.")
+    finally:
+        await state.finish()
 # Главное меню
 main_menu = ReplyKeyboardMarkup(resize_keyboard=True)
 main_menu.add(KeyboardButton("Чаты"), KeyboardButton("Аккаунты"))
