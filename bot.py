@@ -7,7 +7,6 @@ from aiogram.fsm.storage.memory import MemoryStorage
 import json
 import logging
 from config import TELEGRAM_BOT_TOKEN, ADMIN_ID
-import botSendMessage
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -49,6 +48,9 @@ class Database:
             self.data["groups"][group_name].remove(invite_link)
             self.save_data()
 
+    def get_groups(self):
+        return self.data["groups"]
+
     def add_account(self, token):
         if token not in [acc["token"] for acc in self.data["accounts"]]:
             self.data["accounts"].append({"token": token, "messages": []})
@@ -61,9 +63,6 @@ class Database:
 
     def get_accounts(self):
         return self.data["accounts"]
-
-    def get_groups(self):
-        return self.data["groups"]
 
 db = Database()
 
@@ -93,13 +92,12 @@ accounts_menu = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
-# Состояния для FSM с разделением ввода телефона и кода
+# Состояния для FSM
 class Form(StatesGroup):
-    enter_phone = State()      # Ввод номера телефона
-    enter_code = State()       # Ввод 5-значного кода для создания аккаунта
-    add_group_chat = State()   # Добавление чата в группу
+    add_group_chat = State()  # Добавление чата в группу
     remove_group_chat = State()  # Удаление чата из группы
-    add_message = State()      # Добавление сообщения к аккаунту
+    create_account = State()  # Создание аккаунта
+    add_message = State()  # Добавление сообщения к аккаунту
 
 # Обработчик команды /start
 @dp.message(Command("start"))
@@ -180,34 +178,14 @@ async def accounts_menu_handler(message: Message, state: FSMContext):
 # Обработчик кнопки "Создать аккаунт"
 @dp.message(F.text == "Создать аккаунт", StateFilter("*"))
 async def create_account_handler(message: Message, state: FSMContext):
-    await state.set_state(Form.enter_phone)
-    await message.answer("Введите номер телефона для создания аккаунта:")
+    await state.set_state(Form.create_account)
+    await message.answer("Введите токен нового аккаунта.")
 
-# Обработчик ввода номера телефона
-@dp.message(Form.enter_phone)
-async def process_phone(message: Message, state: FSMContext):
-    phone = message.text.strip()
-    await state.update_data(phone=phone)
-    await state.set_state(Form.enter_code)
-    await message.answer("Номер сохранен. Введите 5-значный код.")
-
-# Обработчик ввода кода
-@dp.message(Form.enter_code)
-async def process_code(message: Message, state: FSMContext):
-    code = message.text.strip()
-    if len(code) != 5 or not code.isdigit():
-        await message.answer("Код должен состоять из 5 цифр. Попробуйте еще раз:")
-        return
-
-    data = await state.get_data()
-    phone = data.get("phone")
-    
-    result_message = get_code(code)
-    send_message(phone, result_message)
-    
-    db.add_account(phone)
-    
-    await message.answer(f"Аккаунт с номером {phone} успешно создан, сообщение с кодом {code} отправлено.")
+@dp.message(Form.create_account)
+async def process_create_account(message: Message, state: FSMContext):
+    token = message.text.strip()
+    db.add_account(token)
+    await message.answer(f"Аккаунт с токеном {token[:5]}... успешно создан.")
     await state.clear()
 
 # Обработчик кнопки "Просмотреть аккаунты"
