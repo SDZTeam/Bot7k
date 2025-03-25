@@ -14,7 +14,7 @@ from config import API_ID, API_HASH, TELEGRAM_BOT_TOKEN
 
 # Тестовое сообщение и целевой юзернейм для отправки
 MESSAGE_TEXT = "Привет! Это тестовое сообщение."
-TARGET_USERNAME = "@s4tchik"
+TARGET_USERNAME = "@zeroyzz"
 
 # Папка для хранения сессий Telethon
 SESSION_DIR = "sessions/"

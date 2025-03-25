@@ -7,7 +7,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 import json
 import logging
 from config import TELEGRAM_BOT_TOKEN, ADMIN_ID
-import botSendMessage
+from botSendMessage import get_code
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
