@@ -62,7 +62,6 @@ async def get_phone(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         me = await client.get_me()
         await update.message.reply_text(f"Вы уже авторизованы как {me.username or me.first_name}.")
         await send_message(client, update)
-        await client.disconnect()
         return ConversationHandler.END
 
 async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -81,8 +80,6 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         await send_message(client, update)
     except Exception as e:
         await update.message.reply_text(f"Ошибка авторизации: {e}\nПопробуйте снова, введя /start")
-    finally:
-        await client.disconnect()
     return ConversationHandler.END
 
 async def send_message(client: TelegramClient, update: Update):
