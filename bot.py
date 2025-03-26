@@ -5,7 +5,7 @@ from aiogram.types import Message, CallbackQuery, ReplyKeyboardMarkup, KeyboardB
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
-from telethon import TelegramClient
+from telethon import TelegramClient, types
 from telethon.errors import *
 import json
 import logging
@@ -14,9 +14,7 @@ from datetime import datetime
 from config import TELEGRAM_BOT_TOKEN, API_ID, API_HASH, ADMIN_ID
 
 # Предустановленные сообщения (50 штук)
-PREDEFINED_MESSAGES = [
-    f"Сообщение {i + 1}" for i in range(50)
-]
+PREDEFINED_MESSAGES = [f"Сообщение {i + 1}" for i in range(50)]
 
 # Настройка логирования
 logging.basicConfig(
@@ -30,12 +28,13 @@ storage = MemoryStorage()
 bot = Bot(token=TELEGRAM_BOT_TOKEN)
 dp = Dispatcher(storage=storage)
 
-# Папка для сессий
+# Папки для данных
 SESSION_DIR = "sessions/"
+DATA_DIR = "data/"
 os.makedirs(SESSION_DIR, exist_ok=True)
+os.makedirs(DATA_DIR, exist_ok=True)
 
 
-# База данных аккаунтов
 class AccountManager:
     def __init__(self):
         self.accounts = []
@@ -43,14 +42,14 @@ class AccountManager:
 
     def load_accounts(self):
         try:
-            with open("accounts.json", "r") as f:
+            with open(f"{DATA_DIR}accounts.json", "r") as f:
                 data = json.load(f)
                 self.accounts = data.get("accounts", [])
         except FileNotFoundError:
             self.save_accounts()
 
     def save_accounts(self):
-        with open("accounts.json", "w") as f:
+        with open(f"{DATA_DIR}accounts.json", "w") as f:
             json.dump({"accounts": self.accounts}, f, indent=4)
 
     def add_account(self, phone, session_file):
@@ -83,39 +82,116 @@ class AccountManager:
 account_manager = AccountManager()
 
 
-# Состояния FSM
+class GroupManager:
+    def __init__(self):
+        self.groups = []
+        self.load_groups()
+
+    def load_groups(self):
+        try:
+            with open(f"{DATA_DIR}groups.json", "r") as f:
+                self.groups = json.load(f).get("groups", [])
+        except FileNotFoundError:
+            self.save_groups()
+
+    def save_groups(self):
+        with open(f"{DATA_DIR}groups.json", "w") as f:
+            json.dump({"groups": self.groups}, f, indent=4)
+
+    def add_group(self, group_id, title, username=None, invite_link=None):
+        if not any(g['id'] == group_id for g in self.groups):
+            self.groups.append({
+                "id": group_id,
+                "title": title,
+                "username": username,
+                "invite_link": invite_link,
+                "added_at": datetime.now().isoformat()
+            })
+            self.save_groups()
+            return True
+        return False
+
+    def remove_group(self, group_id):
+        initial_count = len(self.groups)
+        self.groups = [g for g in self.groups if g['id'] != group_id]
+        if len(self.groups) != initial_count:
+            self.save_groups()
+            return True
+        return False
+
+    def get_group(self, group_id):
+        for group in self.groups:
+            if group['id'] == group_id:
+                return group
+        return None
+
+    def get_groups_page(self, page=0, per_page=5):
+        start = page * per_page
+        end = start + per_page
+        return self.groups[start:end]
+
+
+group_manager = GroupManager()
+
+
 class Form(StatesGroup):
     enter_phone = State()
     enter_code = State()
     enter_password = State()
     select_account = State()
-    select_target = State()  # Новое состояние для выбора целевого пользователя
-    select_message = State()  # Новое состояние для выбора сообщения
+    select_target = State()
+    select_message = State()
+    add_group = State()
+    create_message = State()
+    select_group_action = State()
+    confirm_group_deletion = State()
 
 
-# Клавиатуры
-main_menu = ReplyKeyboardMarkup(
-    keyboard=[
-        [KeyboardButton(text="Управление аккаунтами")],
-        [KeyboardButton(text="Отправить сообщение")]
-    ],
-    resize_keyboard=True
-)
-
-account_management_menu = ReplyKeyboardMarkup(
-    keyboard=[
-        [KeyboardButton(text="Добавить аккаунт")],
-        [KeyboardButton(text="Список аккаунтов")],
-        [KeyboardButton(text="Главное меню")]
-    ],
-    resize_keyboard=True
-)
+def create_main_menu():
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="Аккаунты"), KeyboardButton(text="Чаты")],
+            [KeyboardButton(text="Отправить сообщение")]
+        ],
+        resize_keyboard=True
+    )
 
 
-# Создание клавиатуры с предустановленными сообщениями
+def create_accounts_menu():
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="Добавить аккаунт"), KeyboardButton(text="Список аккаунтов")],
+            [KeyboardButton(text="Создать сообщение"), KeyboardButton(text="Главное меню")]
+        ],
+        resize_keyboard=True
+    )
+
+
+def create_groups_menu():
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="Добавить группу"), KeyboardButton(text="Список групп")],
+            [KeyboardButton(text="Главное меню")]
+        ],
+        resize_keyboard=True
+    )
+
+
+def create_pagination_keyboard(page=0, total_pages=1, prefix="groups"):
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="<<", callback_data=f"{prefix}_first"),
+            InlineKeyboardButton(text="<", callback_data=f"{prefix}_prev_{page}"),
+            InlineKeyboardButton(text=f"{page + 1}/{total_pages}", callback_data="current"),
+            InlineKeyboardButton(text=">", callback_data=f"{prefix}_next_{page}"),
+            InlineKeyboardButton(text=">>", callback_data=f"{prefix}_last")
+        ]
+    ])
+
+
 def create_message_keyboard():
     keyboard = []
-    for i in range(0, 50, 5):  # 5 кнопок в ряду
+    for i in range(0, 50, 5):
         row = [
             InlineKeyboardButton(text=f"#{num + 1}", callback_data=f"msg_{num}")
             for num in range(i, min(i + 5, 50))
@@ -124,26 +200,289 @@ def create_message_keyboard():
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
-# Обработчик команды /start
+def create_group_actions_keyboard(group_id):
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="Перейти", callback_data=f"group_join_{group_id}"),
+            InlineKeyboardButton(text="Удалить", callback_data=f"group_delete_{group_id}")
+        ],
+        [InlineKeyboardButton(text="Назад", callback_data="groups_back")]
+    ])
+
+
 @dp.message(Command("start"))
 async def start_command(message: Message):
     if message.from_user.id == ADMIN_ID:
-        await message.answer("Добро пожаловать в Telegram Account Manager!", reply_markup=main_menu)
+        await message.answer("Добро пожаловать в Telegram Account Manager!", reply_markup=create_main_menu())
     else:
         await message.answer("У вас нет доступа к этому боту.")
 
 
-# Управление аккаунтами
-@dp.message(F.text == "Управление аккаунтами")
+@dp.message(F.text == "Главное меню")
+async def main_menu_handler(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer("Главное меню:", reply_markup=create_main_menu())
+
+
+@dp.message(F.text == "Аккаунты")
 async def account_management(message: Message):
-    await message.answer("Выберите действие:", reply_markup=account_management_menu)
+    await message.answer("Управление аккаунтами:", reply_markup=create_accounts_menu())
 
 
-# Добавление аккаунта
+@dp.message(F.text == "Чаты")
+async def chats_management(message: Message):
+    await message.answer("Управление чатами:", reply_markup=create_groups_menu())
+
+
+@dp.message(F.text == "Добавить группу")
+async def add_group_handler(message: Message, state: FSMContext):
+    await state.set_state(Form.add_group)
+    await message.answer(
+        "Введите данные группы в одном из форматов:\n"
+        "- @username группы\n"
+        "- Ссылка-приглашение\n"
+        "- ID группы (например, -100123456789)\n\n"
+        "Или перешлите сообщение из нужной группы:"
+    )
+
+
+@dp.message(Form.add_group)
+async def process_add_group(message: Message, state: FSMContext):
+    try:
+        group_input = message.text.strip()
+        accounts = account_manager.get_all_accounts()
+        if not accounts:
+            await message.answer("Нет доступных аккаунтов для проверки группы!")
+            await state.clear()
+            return
+
+        account = accounts[0]
+        client = TelegramClient(account["session_file"], API_ID, API_HASH)
+
+        await client.connect()
+        if not await client.is_user_authorized():
+            await message.answer("Ошибка: аккаунт не авторизован!")
+            await state.clear()
+            return
+
+        try:
+            entity = await client.get_entity(group_input)
+
+            if isinstance(entity, (types.Channel, types.Chat)):
+                full_chat = await client(types.channels.GetFullChannelRequest(channel=entity))
+
+                group_added = group_manager.add_group(
+                    group_id=entity.id,
+                    title=entity.title,
+                    username=getattr(entity, 'username', None),
+                    invite_link=getattr(full_chat.chat, 'exported_invite', None)
+                )
+
+                if group_added:
+                    await message.answer(
+                        f"Группа успешно добавлена:\n"
+                        f"Название: {entity.title}\n"
+                        f"ID: {entity.id}\n"
+                        f"Username: @{entity.username if hasattr(entity, 'username') else 'нет'}\n"
+                        f"Ссылка: {getattr(full_chat.chat, 'exported_invite', 'нет')}",
+                        reply_markup=create_groups_menu()
+                    )
+                else:
+                    await message.answer("Эта группа уже есть в списке!", reply_markup=create_groups_menu())
+            else:
+                await message.answer("Указанный объект не является группой/чатом/каналом!",
+                                     reply_markup=create_groups_menu())
+        except Exception as e:
+            await message.answer(f"Ошибка при получении информации о группе: {e}", reply_markup=create_groups_menu())
+    except Exception as e:
+        await message.answer(f"Ошибка: {e}", reply_markup=create_groups_menu())
+    finally:
+        await state.clear()
+
+
+@dp.message(F.text == "Список групп")
+async def list_groups(message: Message):
+    total_groups = len(group_manager.groups)
+    if total_groups == 0:
+        return await message.answer("Список групп пуст. Добавьте группы через меню.", reply_markup=create_groups_menu())
+
+    total_pages = (total_groups + 4) // 5
+    current_page = 0
+    groups = group_manager.get_groups_page(current_page)
+
+    response = "Список групп:\n" + "\n".join(
+        [f"{idx + 1}. {group['title']} (ID: {group['id']})"
+         for idx, group in enumerate(groups)]
+    )
+
+    await message.answer(
+        response,
+        reply_markup=create_pagination_keyboard(
+            page=current_page,
+            total_pages=total_pages,
+            prefix="groups"
+        )
+    )
+
+
+@dp.callback_query(F.data.startswith(("groups_prev_", "groups_next_", "groups_first", "groups_last")))
+async def groups_pagination_handler(callback: CallbackQuery):
+    data = callback.data
+    current_page = int(data.split("_")[-1]) if "_" in data and data.split("_")[-1].isdigit() else 0
+    total_groups = len(group_manager.groups)
+    total_pages = (total_groups + 4) // 5
+
+    if "prev" in data:
+        new_page = max(0, current_page - 1)
+    elif "next" in data:
+        new_page = min(total_pages - 1, current_page + 1)
+    elif "first" in data:
+        new_page = 0
+    elif "last" in data:
+        new_page = total_pages - 1
+
+    groups = group_manager.get_groups_page(new_page)
+    response = "Список групп:\n" + "\n".join(
+        [f"{idx + 1}. {group['title']} (ID: {group['id']})"
+         for idx, group in enumerate(groups)]
+    )
+
+    await callback.message.edit_text(
+        response,
+        reply_markup=create_pagination_keyboard(
+            page=new_page,
+            total_pages=total_pages,
+            prefix="groups"
+        )
+    )
+    await callback.answer()
+
+
+@dp.callback_query(F.data.startswith("group_select_"))
+async def select_group_action(callback: CallbackQuery):
+    group_id = int(callback.data.split("_")[-1])
+    group = group_manager.get_group(group_id)
+
+    if not group:
+        await callback.answer("Группа не найдена!")
+        return
+
+    await callback.message.answer(
+        f"Группа: {group['title']}\n"
+        f"ID: {group['id']}\n"
+        f"Username: @{group.get('username', 'нет')}\n"
+        f"Ссылка: {group.get('invite_link', 'нет')}",
+        reply_markup=create_group_actions_keyboard(group_id)
+    )
+    await callback.answer()
+
+
+@dp.callback_query(F.data.startswith("group_join_"))
+async def join_group(callback: CallbackQuery):
+    group_id = int(callback.data.split("_")[-1])
+    group = group_manager.get_group(group_id)
+
+    if not group:
+        await callback.answer("Группа не найдена!")
+        return
+
+    if group.get('username'):
+        link = f"https://t.me/{group['username']}"
+    elif group.get('invite_link'):
+        link = group['invite_link']
+    else:
+        link = None
+
+    if link:
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="Перейти в группу", url=link)],
+            [InlineKeyboardButton(text="Назад к списку", callback_data="groups_back")]
+        ])
+        await callback.message.answer(
+            f"Ссылка для перехода в группу {group['title']}:",
+            reply_markup=keyboard
+        )
+    else:
+        await callback.message.answer(
+            f"Для группы {group['title']} нет доступной ссылки. "
+            f"Используйте ID: {group['id']} для доступа.",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="Назад к списку", callback_data="groups_back")]
+            ])
+        )
+
+    await callback.answer()
+
+
+@dp.callback_query(F.data.startswith("group_delete_"))
+async def delete_group_handler(callback: CallbackQuery, state: FSMContext):
+    group_id = int(callback.data.split("_")[-1])
+    group = group_manager.get_group(group_id)
+
+    if not group:
+        await callback.answer("Группа не найдена!")
+        return
+
+    await state.set_state(Form.confirm_group_deletion)
+    await state.update_data(group_id=group_id)
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="Да", callback_data="confirm_delete"),
+            InlineKeyboardButton(text="Нет", callback_data="cancel_delete")
+        ]
+    ])
+
+    await callback.message.answer(
+        f"Вы уверены, что хотите удалить группу {group['title']}?",
+        reply_markup=keyboard
+    )
+    await callback.answer()
+
+
+@dp.callback_query(F.data == "confirm_delete", Form.confirm_group_deletion)
+async def confirm_group_deletion(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    group_id = data.get("group_id")
+
+    if group_manager.remove_group(group_id):
+        await callback.message.answer("Группа успешно удалена!", reply_markup=create_groups_menu())
+    else:
+        await callback.message.answer("Ошибка при удалении группы!", reply_markup=create_groups_menu())
+
+    await state.clear()
+    await callback.answer()
+
+
+@dp.callback_query(F.data == "cancel_delete", Form.confirm_group_deletion)
+async def cancel_group_deletion(callback: CallbackQuery, state: FSMContext):
+    await callback.message.answer("Удаление отменено.", reply_markup=create_groups_menu())
+    await state.clear()
+    await callback.answer()
+
+
+@dp.callback_query(F.data == "groups_back")
+async def back_to_groups_list(callback: CallbackQuery):
+    await list_groups(callback.message)
+    await callback.answer()
+
+
 @dp.message(F.text == "Добавить аккаунт")
 async def add_account(message: Message, state: FSMContext):
     await state.set_state(Form.enter_phone)
-    await message.answer("Введите номер телефона в международном формате (например, +79123456789):")
+    await message.answer(
+        "Введите номер телефона в международном формате (например, +79123456789):",
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard=[[KeyboardButton(text="Отмена")]],
+            resize_keyboard=True
+        )
+    )
+
+
+@dp.message(F.text == "Отмена", Form.enter_phone)
+async def cancel_add_account(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer("Добавление аккаунта отменено.", reply_markup=create_accounts_menu())
 
 
 @dp.message(Form.enter_phone)
@@ -151,19 +490,43 @@ async def process_phone(message: Message, state: FSMContext):
     phone = message.text.strip()
     session_file = os.path.join(SESSION_DIR, phone)
     if account_manager.get_account(phone):
-        await message.answer("Этот аккаунт уже добавлен!")
+        await message.answer("Этот аккаунт уже добавлен!", reply_markup=create_accounts_menu())
+        await state.clear()
         return
+
     client = TelegramClient(session_file, API_ID, API_HASH)
     try:
         await client.connect()
         await client.send_code_request(phone)
         await state.update_data(phone=phone, client=client)
-        await message.answer("Код отправлен. Введите полученный код:")
+        await message.answer(
+            "Код отправлен. Введите полученный код:",
+            reply_markup=ReplyKeyboardMarkup(
+                keyboard=[[KeyboardButton(text="Отмена")]],
+                resize_keyboard=True
+            )
+        )
         await state.set_state(Form.enter_code)
     except FloodWaitError as e:
-        await message.answer(f"Слишком много попыток. Подождите {e.seconds} секунд.")
+        await message.answer(
+            f"Слишком много попыток. Подождите {e.seconds} секунд.",
+            reply_markup=create_accounts_menu()
+        )
+        await state.clear()
     except Exception as e:
-        await message.answer(f"Ошибка: {e}")
+        await message.answer(
+            f"Ошибка: {str(e)}",
+            reply_markup=create_accounts_menu()
+        )
+        await state.clear()
+
+
+@dp.message(F.text == "Отмена", Form.enter_code)
+async def cancel_add_account_code(message: Message, state: FSMContext):
+    data = await state.get_data()
+    client = data.get("client")
+    await state.clear()
+    await message.answer("Добавление аккаунта отменено.", reply_markup=create_accounts_menu())
 
 
 @dp.message(Form.enter_code)
@@ -172,22 +535,40 @@ async def process_code(message: Message, state: FSMContext):
     data = await state.get_data()
     phone = data.get("phone")
     client = data.get("client")
+
     try:
         await client.sign_in(phone, code)
         account_manager.add_account(phone, client.session.filename)
-        await message.answer("Аккаунт успешно авторизован!")
+        await message.answer("✅ Аккаунт успешно авторизован!", reply_markup=create_accounts_menu())
     except PhoneCodeInvalidError:
-        await message.answer("Неверный код! Попробуйте еще раз:")
+        await message.answer("❌ Неверный код! Попробуйте еще раз:")
+        return
     except PhoneCodeExpiredError:
-        await message.answer("Срок действия кода истек. Запросите новый код.")
+        await message.answer("⌛ Срок действия кода истек. Запросите новый код.")
         await client.send_code_request(phone)
+        return
     except SessionPasswordNeededError:
-        await message.answer("Требуется пароль двухфакторной аутентификации:")
+        await message.answer(
+            "🔒 Требуется пароль двухфакторной аутентификации:",
+            reply_markup=ReplyKeyboardMarkup(
+                keyboard=[[KeyboardButton(text="Отмена")]],
+                resize_keyboard=True
+            )
+        )
         await state.set_state(Form.enter_password)
+        return
     except Exception as e:
-        await message.answer(f"Ошибка: {e}")
-    finally:
-        await state.clear()
+        await message.answer(f"❌ Ошибка: {str(e)}", reply_markup=create_accounts_menu())
+
+    await state.clear()
+
+
+@dp.message(F.text == "Отмена", Form.enter_password)
+async def cancel_add_account_password(message: Message, state: FSMContext):
+    data = await state.get_data()
+    client = data.get("client")
+    await state.clear()
+    await message.answer("Добавление аккаунта отменено.", reply_markup=create_accounts_menu())
 
 
 @dp.message(Form.enter_password)
@@ -196,135 +577,246 @@ async def process_password(message: Message, state: FSMContext):
     data = await state.get_data()
     phone = data.get("phone")
     client = data.get("client")
+
     try:
         await client.sign_in(password=password)
         account_manager.add_account(phone, client.session.filename)
-        await message.answer("Аккаунт успешно авторизован с двухфакторной аутентификацией!")
+        await message.answer(
+            "✅ Аккаунт успешно авторизован с двухфакторной аутентификацией!",
+            reply_markup=create_accounts_menu()
+        )
     except Exception as e:
-        await message.answer(f"Ошибка: {e}")
-    finally:
-        await state.clear()
+        await message.answer(f"❌ Ошибка: {str(e)}", reply_markup=create_accounts_menu())
+
+    await state.clear()
 
 
-# Список аккаунтов
 @dp.message(F.text == "Список аккаунтов")
 async def list_accounts(message: Message):
     accounts = account_manager.get_all_accounts()
     if not accounts:
-        await message.answer("Список аккаунтов пуст.")
+        await message.answer("📭 Список аккаунтов пуст.", reply_markup=create_accounts_menu())
         return
+
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=acc["phone"], callback_data=f"account_{acc['phone']}")]
-        for acc in accounts
+        [InlineKeyboardButton(
+            text=f"{acc['phone']} ({len(acc['message_history'])} сообщ.)",
+            callback_data=f"account_detail_{acc['phone']}"
+        )] for acc in accounts
     ])
-    await message.answer("Выберите аккаунт:", reply_markup=keyboard)
+
+    await message.answer("📋 Список аккаунтов:", reply_markup=keyboard)
 
 
-@dp.callback_query(F.data.startswith("account_"))
-async def show_account_info(callback: CallbackQuery):
-    phone = callback.data.split("_")[1]
+@dp.callback_query(F.data.startswith("account_detail_"))
+async def show_account_detail(callback: CallbackQuery):
+    phone = callback.data.split("_")[2]
     account = account_manager.get_account(phone)
+
     if not account:
         await callback.answer("Аккаунт не найден!")
         return
-    info = f"Аккаунт: {phone}\n"
-    info += f"Последнее использование: {account['last_used']}\n"
-    info += "История сообщений:\n"
-    info += "\n".join(account["message_history"]) or "Нет сообщений"
+
+    info = (
+        f"📱 Аккаунт: {phone}\n"
+        f"⏳ Последняя активность: {account['last_used']}\n"
+        f"📨 Отправлено сообщений: {len(account['message_history'])}\n"
+        f"📝 История сообщений:\n"
+    )
+
+    last_messages = account["message_history"][-5:]
+    for msg in last_messages:
+        info += f"  - {msg}\n"
+
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Удалить аккаунт", callback_data=f"delete_{phone}")]
+        [
+            InlineKeyboardButton(text="✉️ Отправить сообщение", callback_data=f"send_msg_{phone}"),
+            InlineKeyboardButton(text="🗑️ Удалить", callback_data=f"delete_account_{phone}")
+        ],
+        [InlineKeyboardButton(text="🔙 Назад", callback_data="accounts_back")]
     ])
-    await callback.message.answer(info, reply_markup=keyboard)
+
+    await callback.message.edit_text(info, reply_markup=keyboard)
+    await callback.answer()
 
 
-@dp.callback_query(F.data.startswith("delete_"))
-async def delete_account(callback: CallbackQuery):
-    phone = callback.data.split("_")[1]
+@dp.callback_query(F.data == "accounts_back")
+async def back_to_accounts_list(callback: CallbackQuery):
+    await list_accounts(callback.message)
+    await callback.answer()
+
+
+@dp.callback_query(F.data.startswith("delete_account_"))
+async def delete_account_handler(callback: CallbackQuery):
+    phone = callback.data.split("_")[2]
     account = account_manager.get_account(phone)
-    if account:
+
+    if not account:
+        await callback.answer("Аккаунт не найден!")
+        return
+
+    try:
         os.remove(account["session_file"])
         account_manager.accounts = [acc for acc in account_manager.accounts if acc["phone"] != phone]
         account_manager.save_accounts()
-        await callback.answer("Аккаунт удален!")
-    else:
-        await callback.answer("Аккаунт не найден!")
+        await callback.answer("✅ Аккаунт удален!")
+        await back_to_accounts_list(callback)
+    except Exception as e:
+        await callback.answer(f"❌ Ошибка: {str(e)}")
 
 
-# Отправка сообщения
 @dp.message(F.text == "Отправить сообщение")
-async def send_message_menu(message: Message, state: FSMContext):
+async def send_message_menu(message: Message):
     accounts = account_manager.get_all_accounts()
     if not accounts:
-        await message.answer("Нет доступных аккаунтов!")
+        await message.answer("📭 Нет доступных аккаунтов!", reply_markup=create_main_menu())
         return
+
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=acc["phone"], callback_data=f"select_sender_{acc['phone']}")]
-        for acc in accounts
-    ])
-    await message.answer("Выберите аккаунт для отправки:", reply_markup=keyboard)
-    await state.set_state(Form.select_account)
+                                                        [InlineKeyboardButton(text=acc["phone"],
+                                                                              callback_data=f"select_sender_{acc['phone']}")]
+                                                        for acc in accounts
+                                                    ] + [[InlineKeyboardButton(text="🔙 Назад",
+                                                                               callback_data="send_msg_back")]])
+
+    await message.answer("👤 Выберите аккаунт для отправки:", reply_markup=keyboard)
+
+
+@dp.callback_query(F.data == "send_msg_back")
+async def back_from_send_message(callback: CallbackQuery):
+    await callback.message.answer("Главное меню:", reply_markup=create_main_menu())
+    await callback.answer()
 
 
 @dp.callback_query(F.data.startswith("select_sender_"))
 async def select_sender(callback: CallbackQuery, state: FSMContext):
     phone = callback.data.split("_")[2]
     await state.update_data(sender_phone=phone)
-    await callback.message.answer("Введите @username или ID получателя:")
+    await callback.message.answer(
+        "👥 Введите получателя в одном из форматов:\n"
+        "- @username\n"
+        "- ID чата (например, -100123456789)\n"
+        "- Номер телефона (для контактов)\n"
+        "- Ссылка на чат\n\n"
+        "Или введите 'отмена' для возврата",
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard=[[KeyboardButton(text="Отмена")]],
+            resize_keyboard=True
+        )
+    )
     await state.set_state(Form.select_target)
+    await callback.answer()
+
+
+@dp.message(F.text.lower() == "отмена", Form.select_target)
+async def cancel_send_message_target(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer("Отправка сообщения отменена.", reply_markup=create_main_menu())
 
 
 @dp.message(Form.select_target)
 async def process_target(message: Message, state: FSMContext):
     target = message.text.strip()
     await state.update_data(target=target)
-    await message.answer("Выберите сообщение для отправки:", reply_markup=create_message_keyboard())
+    await message.answer(
+        "📩 Выберите сообщение для отправки:",
+        reply_markup=create_message_keyboard()
+    )
     await state.set_state(Form.select_message)
 
 
-@dp.callback_query(F.data.startswith("msg_"))
+@dp.callback_query(F.data.startswith("msg_"), Form.select_message)
 async def process_message_selection(callback: CallbackQuery, state: FSMContext):
     try:
         msg_index = int(callback.data.split("_")[1])
         data = await state.get_data()
         phone = data.get("sender_phone")
         target = data.get("target")
-        message_text = PREDEFINED_MESSAGES[msg_index]
 
+        if msg_index < 0 or msg_index >= len(PREDEFINED_MESSAGES):
+            await callback.answer("❌ Неверный номер сообщения!")
+            return
+
+        message_text = PREDEFINED_MESSAGES[msg_index]
         account = account_manager.get_account(phone)
+
+        if not account:
+            await callback.answer("❌ Аккаунт не найден!")
+            await state.clear()
+            return
+
         client = TelegramClient(account["session_file"], API_ID, API_HASH)
         await client.connect()
 
         if not await client.is_user_authorized():
-            await callback.answer("Аккаунт не авторизован!")
+            await callback.answer("❌ Аккаунт не авторизован!")
+            await state.clear()
             return
 
-        # Резолвинг получателя
         try:
-            if target.isdigit() or (target.startswith('-') and target[1:].isdigit()):
-                entity = await client.get_entity(int(target))  # ID чата/канала
-            elif target.startswith('@'):
-                entity = await client.get_entity(target)  # Username
-            else:
-                raise ValueError("Неверный формат получателя")
+            entity = await client.get_entity(target)
 
-            # Отправка сообщения
             await client.send_message(entity, message_text)
-            await callback.answer(f"Сообщение {msg_index + 1} отправлено!")
 
-            # Обновляем историю
-            account["message_history"].append(f"To {target}: {message_text}")
+            account["message_history"].append(
+                f"{datetime.now().strftime('%Y-%m-%d %H:%M')} -> {target}: {message_text}"
+            )
             account["last_used"] = datetime.now().isoformat()
             account_manager.save_accounts()
 
-            await callback.message.answer(f"Сообщение #{msg_index + 1} успешно отправлено!")
-
+            await callback.answer(f"✅ Сообщение #{msg_index + 1} отправлено!")
+            await callback.message.answer(
+                f"📨 Сообщение успешно отправлено!\n"
+                f"👤 Отправитель: {phone}\n"
+                f"👥 Получатель: {target}\n"
+                f"📝 Текст: {message_text}",
+                reply_markup=create_main_menu()
+            )
+        except ValueError:
+            await callback.answer("❌ Неверный формат получателя!")
         except Exception as e:
-            await callback.answer(f"Ошибка отправки: {e}")
-
+            await callback.answer(f"❌ Ошибка отправки: {str(e)}")
     except Exception as e:
-        await callback.answer(f"Ошибка выбора сообщения: {e}")
+        await callback.answer(f"❌ Ошибка: {str(e)}")
     finally:
         await state.clear()
+
+
+@dp.message(F.text == "Создать сообщение")
+async def create_message_handler(message: Message, state: FSMContext):
+    await state.set_state(Form.create_message)
+    await message.answer(
+        "✍️ Введите текст нового сообщения (макс. 1000 символов):\n"
+        "Можно использовать разметку Markdown: *жирный*, _курсив_, `код`\n\n"
+        "Или введите 'отмена' для возврата",
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard=[[KeyboardButton(text="Отмена")]],
+            resize_keyboard=True
+        )
+    )
+
+
+@dp.message(F.text.lower() == "отмена", Form.create_message)
+async def cancel_create_message(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer("Создание сообщения отменено.", reply_markup=create_accounts_menu())
+
+
+@dp.message(Form.create_message)
+async def process_create_message(message: Message, state: FSMContext):
+    if len(message.text) > 1000:
+        await message.answer(
+            "❌ Сообщение слишком длинное (макс. 1000 символов)!",
+            reply_markup=create_accounts_menu()
+        )
+        return
+
+    PREDEFINED_MESSAGES.append(message.text)
+    await message.answer(
+        f"✅ Сообщение #{len(PREDEFINED_MESSAGES)} успешно создано!",
+        reply_markup=create_accounts_menu()
+    )
+    await state.clear()
 
 
 if __name__ == "__main__":
