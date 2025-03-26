@@ -19,3 +19,63 @@
 2025-03-26 19:45:12,575 - INFO - Disconnecting from 149.154.167.51:443/TcpFull...
 2025-03-26 19:45:12,575 - INFO - Disconnection from 149.154.167.51:443/TcpFull complete!
 2025-03-26 19:45:12,585 - INFO - Update id=821253552 is handled. Duration 859 ms by bot id=7597499330
+2025-03-26 21:48:12,635 - INFO - Start polling
+2025-03-26 21:48:13,063 - INFO - Run polling for bot @Testo1113_Bot id=7597499330 - 'Testo123'
+2025-03-26 21:48:19,697 - INFO - Update id=821253554 is handled. Duration 436 ms by bot id=7597499330
+2025-03-26 21:48:22,064 - INFO - Update id=821253555 is handled. Duration 171 ms by bot id=7597499330
+2025-03-26 21:48:26,129 - INFO - Update id=821253556 is handled. Duration 157 ms by bot id=7597499330
+2025-03-26 21:48:27,153 - INFO - Update id=821253557 is handled. Duration 156 ms by bot id=7597499330
+2025-03-26 21:48:29,699 - INFO - Update id=821253558 is handled. Duration 171 ms by bot id=7597499330
+2025-03-26 21:48:32,861 - INFO - Update id=821253559 is handled. Duration 156 ms by bot id=7597499330
+2025-03-26 21:48:34,831 - INFO - Update id=821253560 is handled. Duration 296 ms by bot id=7597499330
+2025-03-26 21:49:23,155 - INFO - Update id=821253561 is handled. Duration 516 ms by bot id=7597499330
+2025-03-26 21:49:25,733 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-26 21:49:25,858 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-26 21:49:26,641 - INFO - Update id=821253562 is handled. Duration 922 ms by bot id=7597499330
+2025-03-26 21:49:28,223 - INFO - Update id=821253563 is not handled. Duration 0 ms by bot id=7597499330
+2025-03-26 21:49:32,391 - INFO - Update id=821253564 is not handled. Duration 15 ms by bot id=7597499330
+2025-03-26 21:49:33,161 - INFO - Update id=821253565 is not handled. Duration 0 ms by bot id=7597499330
+2025-03-26 21:49:33,619 - INFO - Update id=821253566 is not handled. Duration 0 ms by bot id=7597499330
+2025-03-26 22:06:35,731 - INFO - Start polling
+2025-03-26 22:06:36,140 - INFO - Run polling for bot @Testo1113_Bot id=7597499330 - 'Testo123'
+2025-03-26 22:06:39,193 - INFO - Update id=821253567 is handled. Duration 483 ms by bot id=7597499330
+2025-03-26 22:06:42,373 - INFO - Update id=821253568 is handled. Duration 157 ms by bot id=7597499330
+2025-03-26 22:06:44,173 - INFO - Update id=821253569 is handled. Duration 202 ms by bot id=7597499330
+2025-03-26 22:06:45,099 - INFO - Update id=821253570 is handled. Duration 202 ms by bot id=7597499330
+2025-03-26 22:06:46,091 - INFO - Update id=821253571 is handled. Duration 250 ms by bot id=7597499330
+2025-03-26 22:06:47,958 - INFO - Update id=821253572 is handled. Duration 266 ms by bot id=7597499330
+2025-03-26 22:06:49,062 - INFO - Update id=821253573 is handled. Duration 311 ms by bot id=7597499330
+2025-03-26 22:06:53,872 - INFO - Update id=821253574 is not handled. Duration 16 ms by bot id=7597499330
+2025-03-26 22:06:56,384 - INFO - Update id=821253575 is handled. Duration 500 ms by bot id=7597499330
+2025-03-26 22:06:58,777 - INFO - Update id=821253576 is handled. Duration 156 ms by bot id=7597499330
+2025-03-26 22:07:00,000 - INFO - Update id=821253577 is handled. Duration 172 ms by bot id=7597499330
+2025-03-26 22:07:01,288 - INFO - Update id=821253578 is handled. Duration 360 ms by bot id=7597499330
+2025-03-26 22:07:13,631 - INFO - Update id=821253579 is handled. Duration 563 ms by bot id=7597499330
+2025-03-26 22:07:16,912 - INFO - Update id=821253580 is handled. Duration 344 ms by bot id=7597499330
+2025-03-26 22:07:19,174 - INFO - Update id=821253581 is handled. Duration 467 ms by bot id=7597499330
+2025-03-26 22:07:31,197 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-26 22:07:31,321 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-26 22:07:32,355 - INFO - Update id=821253582 is handled. Duration 1172 ms by bot id=7597499330
+2025-03-26 22:08:37,214 - INFO - Update id=821253583 is not handled. Duration 15 ms by bot id=7597499330
+2025-03-26 22:08:40,626 - INFO - Update id=821253584 is not handled. Duration 16 ms by bot id=7597499330
+2025-03-26 22:08:41,617 - INFO - Update id=821253585 is not handled. Duration 0 ms by bot id=7597499330
+2025-03-26 22:08:41,771 - INFO - Update id=821253586 is not handled. Duration 0 ms by bot id=7597499330
+2025-03-26 22:08:47,273 - INFO - Update id=821253587 is handled. Duration 453 ms by bot id=7597499330
+2025-03-26 22:08:49,561 - INFO - Update id=821253588 is handled. Duration 218 ms by bot id=7597499330
+2025-03-26 22:08:51,798 - INFO - Update id=821253589 is handled. Duration 295 ms by bot id=7597499330
+2025-03-26 22:08:55,672 - INFO - Update id=821253590 is handled. Duration 155 ms by bot id=7597499330
+2025-03-26 22:08:57,464 - INFO - Update id=821253591 is handled. Duration 281 ms by bot id=7597499330
+2025-03-26 22:08:59,921 - INFO - Update id=821253592 is handled. Duration 186 ms by bot id=7597499330
+2025-03-26 22:09:39,478 - INFO - Update id=821253593 is handled. Duration 608 ms by bot id=7597499330
+2025-03-26 22:17:19,296 - INFO - Start polling
+2025-03-26 22:17:19,710 - INFO - Run polling for bot @Testo1113_Bot id=7597499330 - 'Testo123'
+2025-03-26 22:17:23,377 - INFO - Update id=821253594 is handled. Duration 532 ms by bot id=7597499330
+2025-03-26 22:17:27,692 - INFO - Update id=821253595 is handled. Duration 141 ms by bot id=7597499330
+2025-03-26 22:17:29,659 - INFO - Update id=821253596 is handled. Duration 156 ms by bot id=7597499330
+2025-03-26 22:17:31,391 - INFO - Update id=821253597 is handled. Duration 219 ms by bot id=7597499330
+2025-03-26 22:17:32,680 - INFO - Update id=821253598 is handled. Duration 186 ms by bot id=7597499330
+2025-03-26 22:17:34,389 - INFO - Update id=821253599 is handled. Duration 219 ms by bot id=7597499330
+2025-03-26 22:17:35,695 - INFO - Update id=821253600 is handled. Duration 280 ms by bot id=7597499330
+2025-03-26 22:17:38,990 - INFO - Update id=821253601 is handled. Duration 593 ms by bot id=7597499330
+2025-03-26 22:17:45,598 - INFO - Update id=821253602 is handled. Duration 156 ms by bot id=7597499330
+2025-03-26 22:17:47,568 - INFO - Update id=821253603 is handled. Duration 155 ms by bot id=7597499330
