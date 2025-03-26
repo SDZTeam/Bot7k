@@ -189,14 +189,36 @@ def create_pagination_keyboard(page=0, total_pages=1, prefix="groups"):
     ])
 
 
-def create_message_keyboard():
+def create_message_keyboard(page=0, per_page=5):
+    total_pages = (len(PREDEFINED_MESSAGES) + per_page - 1) // per_page
+    start_idx = page * per_page
+    end_idx = min(start_idx + per_page, len(PREDEFINED_MESSAGES))
+
     keyboard = []
-    for i in range(0, 50, 5):
-        row = [
-            InlineKeyboardButton(text=f"#{num + 1}", callback_data=f"msg_{num}")
-            for num in range(i, min(i + 5, 50))
-        ]
-        keyboard.append(row)
+
+    # Добавляем кнопки сообщений для текущей страницы
+    for i in range(start_idx, end_idx):
+        keyboard.append([InlineKeyboardButton(
+            text=f"Сообщение {i + 1}",
+            callback_data=f"msg_{i}"
+        )])
+
+    # Добавляем кнопки пагинации
+    pagination_buttons = []
+    if page > 0:
+        pagination_buttons.append(InlineKeyboardButton(
+            text="⬅️ Назад",
+            callback_data=f"msgpage_{page - 1}"
+        ))
+    if page < total_pages - 1:
+        pagination_buttons.append(InlineKeyboardButton(
+            text="Вперёд ➡️",
+            callback_data=f"msgpage_{page + 1}"
+        ))
+
+    if pagination_buttons:
+        keyboard.append(pagination_buttons)
+
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
@@ -463,6 +485,7 @@ async def cancel_group_deletion(callback: CallbackQuery, state: FSMContext):
 
 @dp.callback_query(F.data == "groups_back")
 async def back_to_groups_list(callback: CallbackQuery):
+    await callback.message.delete()
     await list_groups(callback.message)
     await callback.answer()
 
@@ -630,7 +653,6 @@ async def show_account_detail(callback: CallbackQuery):
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text="✉️ Отправить сообщение", callback_data=f"send_msg_{phone}"),
             InlineKeyboardButton(text="🗑️ Удалить", callback_data=f"delete_account_{phone}")
         ],
         [InlineKeyboardButton(text="🔙 Назад", callback_data="accounts_back")]
@@ -642,6 +664,7 @@ async def show_account_detail(callback: CallbackQuery):
 
 @dp.callback_query(F.data == "accounts_back")
 async def back_to_accounts_list(callback: CallbackQuery):
+    await callback.message.delete()
     await list_accounts(callback.message)
     await callback.answer()
 
@@ -673,17 +696,16 @@ async def send_message_menu(message: Message):
         return
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                                                        [InlineKeyboardButton(text=acc["phone"],
-                                                                              callback_data=f"select_sender_{acc['phone']}")]
-                                                        for acc in accounts
-                                                    ] + [[InlineKeyboardButton(text="🔙 Назад",
-                                                                               callback_data="send_msg_back")]])
+        [InlineKeyboardButton(text=acc["phone"], callback_data=f"select_sender_{acc['phone']}")]
+        for acc in accounts
+    ] + [[InlineKeyboardButton(text="🔙 Назад", callback_data="send_msg_back")]])
 
     await message.answer("👤 Выберите аккаунт для отправки:", reply_markup=keyboard)
 
 
 @dp.callback_query(F.data == "send_msg_back")
 async def back_from_send_message(callback: CallbackQuery):
+    await callback.message.delete()
     await callback.message.answer("Главное меню:", reply_markup=create_main_menu())
     await callback.answer()
 
@@ -720,9 +742,18 @@ async def process_target(message: Message, state: FSMContext):
     await state.update_data(target=target)
     await message.answer(
         "📩 Выберите сообщение для отправки:",
-        reply_markup=create_message_keyboard()
+        reply_markup=create_message_keyboard(page=0)
     )
     await state.set_state(Form.select_message)
+
+
+@dp.callback_query(F.data.startswith("msgpage_"))
+async def handle_message_pagination(callback: CallbackQuery, state: FSMContext):
+    page = int(callback.data.split("_")[1])
+    await callback.message.edit_reply_markup(
+        reply_markup=create_message_keyboard(page=page)
+    )
+    await callback.answer()
 
 
 @dp.callback_query(F.data.startswith("msg_"), Form.select_message)
