@@ -1,6 +1,8 @@
 import asyncio
 from multiprocessing import connection
 import aiofiles
+from telethon.tl.functions.channels import JoinChannelRequest
+from telethon.tl.functions.messages import ImportChatInviteRequest
 from tenacity import retry, wait_fixed, stop_after_attempt
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command, StateFilter
@@ -42,12 +44,12 @@ os.makedirs(DATA_DIR, exist_ok=True)
 class AccountManager:
     def __init__(self):
         self.accounts = []
-        self.lock = asyncio.Semaphore(1)
-        self.load_accounts()
+        self.lock = asyncio.Semaphore(1)  # Ограничение одновременного доступа
+        asyncio.run(self.load_accounts())  # Вызов асинхронного метода
 
     @retry(wait=wait_fixed(0.5), stop=stop_after_attempt(5))
     async def load_accounts(self):
-        async with self.lock:
+        async with self.lock:  # Блокировка доступа
             try:
                 async with aiofiles.open(f"{DATA_DIR}accounts.json", "r") as f:
                     content = await f.read()
@@ -58,9 +60,10 @@ class AccountManager:
 
     @retry(wait=wait_fixed(0.5), stop=stop_after_attempt(5))
     async def save_accounts(self):
-        async with self.lock:
+        async with self.lock:  # Блокировка доступа
             async with aiofiles.open(f"{DATA_DIR}accounts.json", "w") as f:
                 await f.write(json.dumps({"accounts": self.accounts}, indent=4))
+
 
 
     def add_account(self, phone, session_file):
@@ -96,23 +99,24 @@ account_manager = AccountManager()
 class GroupManager:
     def __init__(self):
         self.groups = []
-        self.load_groups()
-
-    @retry(wait=wait_fixed(0.5), stop=stop_after_attempt(5))
-    async def save_groups(self):
-        async with self.lock:
-            async with aiofiles.open(f"{DATA_DIR}groups.json", "w") as f:
-                await f.write(json.dumps({"groups": self.groups}, indent=4))
+        self.lock = asyncio.Semaphore(1)  # Ограничение одновременного доступа
+        asyncio.run(self.load_groups())
 
     @retry(wait=wait_fixed(0.5), stop=stop_after_attempt(5))
     async def load_groups(self):
-        async with self.lock:
+        async with self.lock:  # Блокировка доступа
             try:
                 async with aiofiles.open(f"{DATA_DIR}groups.json", "r") as f:
                     content = await f.read()
                     self.groups = json.loads(content).get("groups", [])
             except FileNotFoundError:
                 await self.save_groups()
+
+    @retry(wait=wait_fixed(0.5), stop=stop_after_attempt(5))
+    async def save_groups(self):
+        async with self.lock:  # Блокировка доступа
+            async with aiofiles.open(f"{DATA_DIR}groups.json", "w") as f:
+                await f.write(json.dumps({"groups": self.groups}, indent=4))
 
     def add_group(self, group_id, title, username=None, invite_link=None):
         if not any(g['id'] == group_id for g in self.groups):
@@ -299,7 +303,6 @@ async def add_group_handler(message: Message, state: FSMContext):
         "Или перешлите сообщение из нужной группы:"
     )
 
-
 @dp.message(Form.add_group)
 async def process_add_group(message: Message, state: FSMContext):
     try:
@@ -319,47 +322,46 @@ async def process_add_group(message: Message, state: FSMContext):
             auto_reconnect=True,
             retry_delay=10
         )
-
         await client.connect()
+
         if not await client.is_user_authorized():
             await message.answer("Ошибка: аккаунт не авторизован!")
             await state.clear()
             return
 
         try:
+            # Попытка присоединиться к группе
+            if "joinchat" in group_input or "+C" in group_input:
+                hash_part = group_input.split("/")[-1]
+                await client(ImportChatInviteRequest(hash_part))
+
             entity = await client.get_entity(group_input)
 
             if isinstance(entity, (types.Channel, types.Chat)):
                 full_chat = await client(types.channels.GetFullChannelRequest(channel=entity))
-
                 group_added = group_manager.add_group(
                     group_id=entity.id,
                     title=entity.title,
                     username=getattr(entity, 'username', None),
                     invite_link=getattr(full_chat.chat, 'exported_invite', None)
                 )
-
-                if group_added:
-                    await message.answer(
-                        f"Группа успешно добавлена:\n"
-                        f"Название: {entity.title}\n"
-                        f"ID: {entity.id}\n"
-                        f"Username: @{entity.username if hasattr(entity, 'username') else 'нет'}\n"
-                        f"Ссылка: {getattr(full_chat.chat, 'exported_invite', 'нет')}",
-                        reply_markup=create_groups_menu()
-                    )
-                else:
-                    await message.answer("Эта группа уже есть в списке!", reply_markup=create_groups_menu())
+                await group_manager.save_groups()  # Сохраняем группы с блокировкой
+                await message.answer(
+                    f"Группа успешно добавлена:\n"
+                    f"Название: {entity.title}\n"
+                    f"ID: {entity.id}\n"
+                    f"Username: @{entity.username if hasattr(entity, 'username') else 'нет'}\n"
+                    f"Ссылка: {getattr(full_chat.chat, 'exported_invite', 'нет')}",
+                    reply_markup=create_groups_menu()
+                )
             else:
-                await message.answer("Указанный объект не является группой/чатом/каналом!",
-                                     reply_markup=create_groups_menu())
+                await message.answer("Указанный объект не является группой/чатом/каналом!", reply_markup=create_groups_menu())
         except Exception as e:
             await message.answer(f"Ошибка при получении информации о группе: {e}", reply_markup=create_groups_menu())
     except Exception as e:
         await message.answer(f"Ошибка: {e}", reply_markup=create_groups_menu())
     finally:
         await state.clear()
-
 
 @dp.message(F.text == "Список групп")
 async def list_groups(message: Message):
