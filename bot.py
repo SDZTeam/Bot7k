@@ -16,8 +16,14 @@ from telethon.errors import *
 import json
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from config import TELEGRAM_BOT_TOKEN, API_ID, API_HASH, ADMIN_ID
+
+# Настройки рассылки
+MESSAGE_TYPES = 5  # Количество видов рассылки
+ACCOUNT_DELAY = timedelta(minutes=30)  # Задержка между аккаунтами
+MESSAGE_INTERVAL = timedelta(hours=3)  # Интервал между сообщениями одного типа
+CHAT_DELAY = timedelta(minutes=15)  # Задержка между чатами для одного аккаунта
 
 # Предустановленные сообщения (50 штук)
 PREDEFINED_MESSAGES = [f"Сообщение {i + 1}" for i in range(50)]
@@ -40,16 +46,20 @@ DATA_DIR = "data/"
 os.makedirs(SESSION_DIR, exist_ok=True)
 os.makedirs(DATA_DIR, exist_ok=True)
 
+# Глобальные переменные для рассылки
+scheduler_running = False
+scheduler_task = None
+
 
 class AccountManager:
     def __init__(self):
         self.accounts = []
-        self.lock = asyncio.Semaphore(1)  # Ограничение одновременного доступа
-        asyncio.run(self.load_accounts())  # Вызов асинхронного метода
+        self.lock = asyncio.Semaphore(1)
+        asyncio.run(self.load_accounts())
 
     @retry(wait=wait_fixed(0.5), stop=stop_after_attempt(5))
     async def load_accounts(self):
-        async with self.lock:  # Блокировка доступа
+        async with self.lock:
             try:
                 async with aiofiles.open(f"{DATA_DIR}accounts.json", "r") as f:
                     content = await f.read()
@@ -66,7 +76,7 @@ class AccountManager:
 
     @retry(wait=wait_fixed(0.5), stop=stop_after_attempt(5))
     async def save_accounts(self):
-        async with self.lock:  # Блокировка доступа
+        async with self.lock:
             try:
                 async with aiofiles.open(f"{DATA_DIR}accounts.json", "w") as f:
                     await f.write(json.dumps({"accounts": self.accounts}, indent=4))
@@ -76,8 +86,6 @@ class AccountManager:
                     raise
                 logging.error(f"Ошибка сохранения аккаунтов: {e}")
                 raise
-
-
 
     def add_account(self, phone, session_file):
         if not self.get_account(phone):
@@ -112,12 +120,12 @@ account_manager = AccountManager()
 class GroupManager:
     def __init__(self):
         self.groups = []
-        self.lock = asyncio.Semaphore(1)  # Ограничение одновременного доступа
+        self.lock = asyncio.Semaphore(1)
         asyncio.run(self.load_groups())
 
     @retry(wait=wait_fixed(0.5), stop=stop_after_attempt(5))
     async def load_groups(self):
-        async with self.lock:  # Блокировка доступа
+        async with self.lock:
             try:
                 async with aiofiles.open(f"{DATA_DIR}groups.json", "r") as f:
                     content = await f.read()
@@ -133,7 +141,7 @@ class GroupManager:
 
     @retry(wait=wait_fixed(0.5), stop=stop_after_attempt(5))
     async def save_groups(self):
-        async with self.lock:  # Блокировка доступа
+        async with self.lock:
             try:
                 async with aiofiles.open(f"{DATA_DIR}groups.json", "w") as f:
                     await f.write(json.dumps({"groups": self.groups}, indent=4))
@@ -197,7 +205,7 @@ def create_main_menu():
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="Аккаунты"), KeyboardButton(text="Чаты")],
-            [KeyboardButton(text="Отправить сообщение")]
+            [KeyboardButton(text="Управление рассылкой")]
         ],
         resize_keyboard=True
     )
@@ -212,7 +220,9 @@ def create_accounts_menu():
         resize_keyboard=True
     )
 
+
 active_clients = {}
+
 
 async def get_client(phone: str) -> TelegramClient:
     if phone not in active_clients:
@@ -228,6 +238,7 @@ async def get_client(phone: str) -> TelegramClient:
         await client.connect()
         active_clients[phone] = client
     return active_clients[phone]
+
 
 def create_groups_menu():
     return ReplyKeyboardMarkup(
@@ -258,14 +269,12 @@ def create_message_keyboard(page=0, per_page=5):
 
     keyboard = []
 
-    # Добавляем кнопки сообщений для текущей страницы
     for i in range(start_idx, end_idx):
         keyboard.append([InlineKeyboardButton(
             text=f"Сообщение {i + 1}",
             callback_data=f"msg_{i}"
         )])
 
-    # Добавляем кнопки пагинации
     pagination_buttons = []
     if page > 0:
         pagination_buttons.append(InlineKeyboardButton(
@@ -294,12 +303,168 @@ def create_group_actions_keyboard(group_id):
     ])
 
 
+async def send_message_to_group(account, group, message_type):
+    try:
+        client = await get_client(account["phone"])
+        if not await client.is_user_authorized():
+            logging.error(f"Аккаунт {account['phone']} не авторизован!")
+            return False
+
+        message_index = (message_type % MESSAGE_TYPES) % len(PREDEFINED_MESSAGES)
+        message_text = PREDEFINED_MESSAGES[message_index]
+
+        entity = await client.get_entity(group["id"])
+        await client.send_message(entity, message_text)
+
+        account["message_history"].append(
+            f"{datetime.now().strftime('%Y-%m-%d %H:%M')} -> {group['title']}: {message_text}"
+        )
+        account["last_used"] = datetime.now().isoformat()
+        await account_manager.save_accounts()
+
+        logging.info(f"Сообщение #{message_index + 1} отправлено в {group['title']} от {account['phone']}")
+        return True
+    except Exception as e:
+        logging.error(f"Ошибка отправки сообщения от {account['phone']} в {group['title']}: {e}")
+        return False
+
+
+async def message_scheduler():
+    global scheduler_running
+    scheduler_running = True
+    message_type = 0
+    last_message_time = {}
+
+    while scheduler_running:
+        try:
+            accounts = account_manager.get_all_accounts()
+            groups = group_manager.groups
+
+            if not accounts or not groups:
+                await asyncio.sleep(60)
+                continue
+
+            current_time = datetime.now()
+
+            # Проверяем, нужно ли отправлять новую партию сообщений
+            if message_type not in last_message_time or \
+                    (current_time - last_message_time.get(message_type, datetime.min)) >= MESSAGE_INTERVAL:
+
+                for i, account in enumerate(accounts):
+                    start_time = current_time + i * ACCOUNT_DELAY
+
+                    for j, group in enumerate(groups):
+                        send_time = start_time + j * CHAT_DELAY
+
+                        if send_time > current_time:
+                            await asyncio.sleep((send_time - current_time).total_seconds())
+
+                        await send_message_to_group(account, group, message_type + i)
+                        await asyncio.sleep(1)  # Небольшая задержка между сообщениями
+
+                last_message_time[message_type] = current_time
+                message_type = (message_type + 1) % MESSAGE_TYPES
+
+            await asyncio.sleep(60)  # Проверяем каждую минуту
+
+        except Exception as e:
+            logging.error(f"Ошибка в планировщике: {e}")
+            await asyncio.sleep(60)
+
+
+@dp.message(F.text == "Управление рассылкой")
+async def manage_scheduler(message: Message):
+    global scheduler_running, scheduler_task
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text="⏸ Остановить" if scheduler_running else "▶️ Запустить",
+                callback_data="toggle_scheduler"
+            )
+        ],
+        [
+            InlineKeyboardButton(text="🔄 Статус", callback_data="scheduler_status"),
+            InlineKeyboardButton(text="❌ Закрыть", callback_data="close_scheduler_menu")
+        ]
+    ])
+
+    status = "активна" if scheduler_running else "остановлена"
+    await message.answer(
+        f"Текущий статус рассылки: {status}\n"
+        f"Настройки:\n"
+        f"- Типов сообщений: {MESSAGE_TYPES}\n"
+        f"- Интервал между типами: {MESSAGE_INTERVAL}\n"
+        f"- Задержка между аккаунтами: {ACCOUNT_DELAY}\n"
+        f"- Задержка между чатами: {CHAT_DELAY}",
+        reply_markup=keyboard
+    )
+
+
+@dp.callback_query(F.data == "toggle_scheduler")
+async def toggle_scheduler(callback: CallbackQuery):
+    global scheduler_running, scheduler_task
+
+    if scheduler_running:
+        scheduler_running = False
+        if scheduler_task:
+            scheduler_task.cancel()
+            try:
+                await scheduler_task
+            except asyncio.CancelledError:
+                pass
+            scheduler_task = None
+        await callback.answer("Рассылка остановлена")
+    else:
+        scheduler_running = True
+        scheduler_task = asyncio.create_task(message_scheduler())
+        await callback.answer("Рассылка запущена")
+
+    await manage_scheduler(callback.message)
+
+
+@dp.callback_query(F.data == "scheduler_status")
+async def scheduler_status(callback: CallbackQuery):
+    accounts = account_manager.get_all_accounts()
+    groups = group_manager.groups
+
+    status = (
+        f"Статус рассылки:\n"
+        f"- Аккаунтов: {len(accounts)}\n"
+        f"- Чатов: {len(groups)}\n"
+        f"- Сообщений: {len(PREDEFINED_MESSAGES)}\n"
+        f"- Работает: {'да' if scheduler_running else 'нет'}"
+    )
+
+    await callback.answer(status, show_alert=True)
+
+
+@dp.callback_query(F.data == "close_scheduler_menu")
+async def close_scheduler_menu(callback: CallbackQuery):
+    await callback.message.delete()
+    await callback.answer()
+
+
 @dp.message(Command("start"))
 async def start_command(message: Message):
-    if message.from_user.id == ADMIN_ID:
-        await message.answer("Добро пожаловать в Telegram Account Manager!", reply_markup=create_main_menu())
-    else:
-        await message.answer("У вас нет доступа к этому боту.")
+    try:
+        if message.from_user.id == ADMIN_ID:
+            await message.answer(
+                "🚀 Добро пожаловать в Telegram Account Manager!\n\n"
+                "📌 Функции бота:\n"
+                "- Управление аккаунтами (добавление/удаление)\n"
+                "- Управление чатами/группами\n"
+                "- Автоматическая рассылка сообщений по расписанию\n\n"
+                "👇 Используйте меню ниже для работы с ботом",
+                reply_markup=create_main_menu()
+            )
+            logging.info(f"Бот запущен для администратора {message.from_user.id}")
+        else:
+            await message.answer("⛔ У вас нет доступа к этому боту.")
+            logging.warning(f"Попытка доступа от пользователя {message.from_user.id}")
+    except Exception as e:
+        logging.error(f"Ошибка в обработчике /start: {e}")
+        await message.answer("⚠️ Произошла ошибка при запуске бота. Попробуйте позже.")
 
 
 @dp.message(F.text == "Главное меню")
@@ -328,6 +493,7 @@ async def add_group_handler(message: Message, state: FSMContext):
         "- ID группы (например, -100123456789)\n\n"
         "Или перешлите сообщение из нужной группы:"
     )
+
 
 @dp.message(Form.add_group)
 async def process_add_group(message: Message, state: FSMContext):
@@ -371,7 +537,7 @@ async def process_add_group(message: Message, state: FSMContext):
                     username=getattr(entity, 'username', None),
                     invite_link=getattr(full_chat.chat, 'exported_invite', None)
                 )
-                await group_manager.save_groups()  # Сохраняем группы с блокировкой
+                await group_manager.save_groups()
                 await message.answer(
                     f"Группа успешно добавлена:\n"
                     f"Название: {entity.title}\n"
@@ -381,13 +547,15 @@ async def process_add_group(message: Message, state: FSMContext):
                     reply_markup=create_groups_menu()
                 )
             else:
-                await message.answer("Указанный объект не является группой/чатом/каналом!", reply_markup=create_groups_menu())
+                await message.answer("Указанный объект не является группой/чатом/каналом!",
+                                     reply_markup=create_groups_menu())
         except Exception as e:
             await message.answer(f"Ошибка при получении информации о группе: {e}", reply_markup=create_groups_menu())
     except Exception as e:
         await message.answer(f"Ошибка: {e}", reply_markup=create_groups_menu())
     finally:
         await state.clear()
+
 
 @dp.message(F.text == "Список групп")
 async def list_groups(message: Message):
@@ -584,13 +752,6 @@ async def process_phone(message: Message, state: FSMContext):
         await state.clear()
         return
 
-    # СУУУУУУУУУУУУУУУУУУУУУУУУУУУУКА ТУТ
-    # СУУУУУУУУУУУУУУУУУУУУУУУУУУУУКА ТУТ
-    # СУУУУУУУУУУУУУУУУУУУУУУУУУУУУКА ТУТ
-    # СУУУУУУУУУУУУУУУУУУУУУУУУУУУУКА ТУТ
-    # СУУУУУУУУУУУУУУУУУУУУУУУУУУУУКА ТУТ
-    # СУУУУУУУУУУУУУУУУУУУУУУУУУУУУКА ТУТ
-    # СУУУУУУУУУУУУУУУУУУУУУУУУУУУУКА ТУТ
     client = TelegramClient(session_file, API_ID, API_HASH)
     try:
         await client.connect()
@@ -621,7 +782,6 @@ async def process_phone(message: Message, state: FSMContext):
 @dp.message(F.text == "Отмена", Form.enter_code)
 async def cancel_add_account_code(message: Message, state: FSMContext):
     data = await state.get_data()
-    client = data.get("client")
     await state.clear()
     await message.answer("Добавление аккаунта отменено.", reply_markup=create_accounts_menu())
 
@@ -663,7 +823,6 @@ async def process_code(message: Message, state: FSMContext):
 @dp.message(F.text == "Отмена", Form.enter_password)
 async def cancel_add_account_password(message: Message, state: FSMContext):
     data = await state.get_data()
-    client = data.get("client")
     await state.clear()
     await message.answer("Добавление аккаунта отменено.", reply_markup=create_accounts_menu())
 
@@ -762,126 +921,6 @@ async def delete_account_handler(callback: CallbackQuery):
         await callback.answer(f"❌ Ошибка: {str(e)}")
 
 
-@dp.message(F.text == "Отправить сообщение")
-
-
-@dp.callback_query(F.data == "send_msg_back")
-async def back_from_send_message(callback: CallbackQuery):
-    await callback.message.delete()
-    await callback.message.answer("Главное меню:", reply_markup=create_main_menu())
-    await callback.answer()
-
-
-@dp.callback_query(F.data.startswith("select_sender_"))
-async def select_sender(callback: CallbackQuery, state: FSMContext):
-    phone = callback.data.split("_")[2]
-    await state.update_data(sender_phone=phone)
-    await callback.message.answer(
-        "👥 Введите получателя в одном из форматов:\n"
-        "- @username\n"
-        "- ID чата (например, -100123456789)\n"
-        "- Номер телефона (для контактов)\n"
-        "- Ссылка на чат\n\n"
-        "Или введите 'отмена' для возврата",
-        reply_markup=ReplyKeyboardMarkup(
-            keyboard=[[KeyboardButton(text="Отмена")]],
-            resize_keyboard=True
-        )
-    )
-    await state.set_state(Form.select_target)
-    await callback.answer()
-
-
-@dp.message(F.text.lower() == "отмена", Form.select_target)
-async def cancel_send_message_target(message: Message, state: FSMContext):
-    await state.clear()
-    await message.answer("Отправка сообщения отменена.", reply_markup=create_main_menu())
-
-
-@dp.message(Form.select_target)
-async def process_target(message: Message, state: FSMContext):
-    target = message.text.strip()
-    await state.update_data(target=target)
-    await message.answer(
-        "📩 Выберите сообщение для отправки:",
-        reply_markup=create_message_keyboard(page=0)
-    )
-    await state.set_state(Form.select_message)
-
-
-@dp.callback_query(F.data.startswith("msgpage_"))
-async def handle_message_pagination(callback: CallbackQuery, state: FSMContext):
-    page = int(callback.data.split("_")[1])
-    await callback.message.edit_reply_markup(
-        reply_markup=create_message_keyboard(page=page)
-    )
-    await callback.answer()
-
-
-@dp.callback_query(F.data.startswith("msg_"), Form.select_message)
-async def process_message_selection(callback: CallbackQuery, state: FSMContext):
-    try:
-        msg_index = int(callback.data.split("_")[1])
-        data = await state.get_data()
-        phone = data.get("sender_phone")
-        target = data.get("target")
-        
-        if msg_index < 0 or msg_index >= len(PREDEFINED_MESSAGES):
-            await callback.answer("❌ Неверный номер сообщения!")
-            return
-            
-        message_text = PREDEFINED_MESSAGES[msg_index]
-        account = account_manager.get_account(phone)
-        
-        if not account:
-            await callback.answer("❌ Аккаунт не найден!")
-            await state.clear()
-            return
-            
-        # Создаем клиент с правильным соединением
-        client = TelegramClient(
-            account["session_file"],
-            API_ID,
-            API_HASH,
-            connection=connection.ConnectionTcpFull,  # Используем стандартное соединение
-            auto_reconnect=True,
-            retry_delay=10
-        )
-        
-        await client.connect()
-        
-        if not await client.is_user_authorized():
-            await callback.answer("❌ Аккаунт не авторизован!")
-            await state.clear()
-            return
-            
-        try:
-            entity = await client.get_entity(target)
-            await client.send_message(entity, message_text)
-            
-            account["message_history"].append(
-                f"{datetime.now().strftime('%Y-%m-%d %H:%M')} -> {target}: {message_text}"
-            )
-            account["last_used"] = datetime.now().isoformat()
-            await account_manager.save_accounts()
-            
-            await callback.answer(f"✅ Сообщение #{msg_index + 1} отправлено!")
-            await callback.message.answer(
-                f"📨 Сообщение успешно отправлено!\n"
-                f"👤 Отправитель: {phone}\n"
-                f"👥 Получатель: {target}\n"
-                f"📝 Текст: {message_text}",
-                reply_markup=create_main_menu()
-            )
-        except ValueError:
-            await callback.answer("❌ Неверный формат получателя!")
-        except Exception as e:
-            await callback.answer(f"❌ Ошибка отправки: {str(e)}")
-    except Exception as e:
-        await callback.answer(f"❌ Ошибка: {str(e)}")
-    finally:
-        await state.clear()
-        
 @dp.message(F.text == "Создать сообщение")
 async def create_message_handler(message: Message, state: FSMContext):
     await state.set_state(Form.create_message)
@@ -918,7 +957,6 @@ async def process_create_message(message: Message, state: FSMContext):
     )
     await state.clear()
 
-from aiogram import exceptions
 
 @dp.errors()
 async def handle_errors(update, exception):
@@ -931,6 +969,7 @@ async def handle_errors(update, exception):
         await asyncio.sleep(wait_time)
         return True
     return False
+
 
 async def connect_all_accounts():
     for acc in account_manager.get_all_accounts():
@@ -949,6 +988,7 @@ async def connect_all_accounts():
         except Exception as e:
             logging.error(f"Ошибка подключения {acc['phone']}: {e}")
 
+
 async def keep_alive():
     while True:
         await asyncio.sleep(300)  # Каждые 5 минут
@@ -960,10 +1000,11 @@ async def keep_alive():
             except Exception as e:
                 logging.error(f"Keep-alive ошибка {phone}: {e}")
 
-# В основном блоке
+
 async def main():
     await connect_all_accounts()
     await dp.start_polling(bot)
+
 
 if __name__ == "__main__":
     try:
