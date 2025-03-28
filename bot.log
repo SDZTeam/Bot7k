@@ -889,3 +889,78 @@ task: <Task pending name='Task-53' coro=<MTProtoSender._send_loop() done, define
 2025-03-28 23:37:12,265 - ERROR - Task was destroyed but it is pending!
 task: <Task pending name='Task-54' coro=<MTProtoSender._recv_loop() done, defined at C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\network\mtprotosender.py:497> wait_for=<Future cancelled>>
 2025-03-28 23:37:12,720 - INFO - Update id=821253918 is handled. Duration 1391 ms by bot id=7597499330
+2025-03-28 23:38:21,558 - WARNING - Server closed the connection: [WinError 1236] Подключение к сети было разорвано локальной системой
+2025-03-28 23:38:21,559 - INFO - Connection closed while receiving data: [WinError 1236] Подключение к сети было разорвано локальной системой
+2025-03-28 23:38:21,559 - INFO - Closing current connection to begin reconnect...
+2025-03-28 23:38:21,559 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 23:38:21,559 - INFO - <class 'ConnectionAbortedError'> during disconnect: [WinError 1236] Подключение к сети было разорвано локальной системой
+2025-03-28 23:38:21,560 - WARNING - Attempt 1 at connecting failed: PermissionError: [WinError 5] Отказано в доступе
+2025-03-28 23:38:24,951 - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientOSError: [WinError 1236] Подключение к сети было разорвано локальной системой
+2025-03-28 23:38:24,951 - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 7597499330)
+2025-03-28 23:38:31,707 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-28 23:38:36,472 - INFO - Connection established (tryings = 1, bot id = 7597499330)
+2025-03-28 23:49:29,558 - INFO - Polling stopped
+2025-03-28 23:49:29,558 - INFO - Polling stopped for bot @Testo1113_Bot id=7597499330 - 'Testo123'
+2025-03-28 23:49:29,560 - INFO - Бот остановлен пользователем
+2025-03-28 23:49:29,622 - ERROR - Task exception was never retrieved
+future: <Task finished name='Task-14' coro=<UpdateMethods._keepalive_loop() done, defined at C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\client\updates.py:481> exception=OperationalError('database is locked')>
+Traceback (most recent call last):
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\client\updates.py", line 517, in _keepalive_loop
+    self._save_states_and_entities()
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\client\telegrambaseclient.py", line 694, in _save_states_and_entities
+    self.session.process_entities(types.contacts.ResolvedPeer(None, [e._as_input_peer() for e in entities], []))
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\sessions\sqlite.py", line 301, in process_entities
+    c.executemany(
+sqlite3.OperationalError: database is locked
+2025-03-28 23:49:34,099 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 23:49:34,223 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-28 23:49:34,770 - INFO - Start polling
+2025-03-28 23:49:35,296 - INFO - Run polling for bot @Testo1113_Bot id=7597499330 - 'Testo123'
+2025-03-28 23:49:38,340 - INFO - Update id=821253919 is handled. Duration 516 ms by bot id=7597499330
+2025-03-28 23:49:53,168 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 23:49:53,293 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-28 23:49:59,231 - INFO - Update id=821253920 is handled. Duration 6077 ms by bot id=7597499330
+2025-03-28 23:51:23,419 - WARNING - Server closed the connection: 0 bytes read on a total of 8 expected bytes
+2025-03-28 23:51:23,420 - INFO - Connection closed while receiving data: 0 bytes read on a total of 8 expected bytes
+2025-03-28 23:51:23,420 - INFO - Closing current connection to begin reconnect...
+2025-03-28 23:51:23,420 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 23:51:23,545 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-29 00:01:33,985 - WARNING - Server closed the connection: 0 bytes read on a total of 8 expected bytes
+2025-03-29 00:01:33,986 - INFO - Connection closed while receiving data: 0 bytes read on a total of 8 expected bytes
+2025-03-29 00:01:33,986 - INFO - Closing current connection to begin reconnect...
+2025-03-29 00:01:33,986 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-29 00:01:34,111 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-29 00:01:37,161 - WARNING - Server closed the connection: 0 bytes read on a total of 8 expected bytes
+2025-03-29 00:01:37,161 - INFO - Connection closed while receiving data: 0 bytes read on a total of 8 expected bytes
+2025-03-29 00:01:37,161 - INFO - Closing current connection to begin reconnect...
+2025-03-29 00:01:37,161 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-29 00:01:37,162 - ERROR - Task was destroyed but it is pending!
+task: <Task pending name='Task-119' coro=<Connection._send_loop() done, defined at C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\network\connection\connection.py:316> wait_for=<Future cancelled>>
+2025-03-29 00:01:37,172 - ERROR - Task was destroyed but it is pending!
+task: <Task pending name='Task-120' coro=<Connection._recv_loop() running at C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\network\connection\connection.py:361> wait_for=<Future pending cb=[Task.task_wakeup()]>>
+2025-03-29 00:01:37,172 - ERROR - Task was destroyed but it is pending!
+task: <Task pending name='Task-121' coro=<MTProtoSender._send_loop() done, defined at C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\network\mtprotosender.py:446> wait_for=<Future pending cb=[Task.task_wakeup()]>>
+2025-03-29 00:01:37,172 - ERROR - Task was destroyed but it is pending!
+task: <Task pending name='Task-122' coro=<MTProtoSender._recv_loop() done, defined at C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\network\mtprotosender.py:497> wait_for=<Future cancelled>>
+2025-03-29 00:01:37,304 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-29 00:06:10,579 - INFO - Polling stopped
+2025-03-29 00:06:10,580 - INFO - Polling stopped for bot @Testo1113_Bot id=7597499330 - 'Testo123'
+2025-03-29 00:06:10,581 - INFO - Бот остановлен пользователем
+2025-03-29 00:06:10,651 - ERROR - Task exception was never retrieved
+future: <Task finished name='Task-14' coro=<UpdateMethods._keepalive_loop() done, defined at C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\client\updates.py:481> exception=OperationalError('database is locked')>
+Traceback (most recent call last):
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\client\updates.py", line 517, in _keepalive_loop
+    self._save_states_and_entities()
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\client\telegrambaseclient.py", line 694, in _save_states_and_entities
+    self.session.process_entities(types.contacts.ResolvedPeer(None, [e._as_input_peer() for e in entities], []))
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\sessions\sqlite.py", line 301, in process_entities
+    c.executemany(
+sqlite3.OperationalError: database is locked
+2025-03-29 00:06:14,292 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-29 00:06:14,440 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-29 00:06:15,153 - INFO - Start polling
+2025-03-29 00:06:15,605 - INFO - Run polling for bot @Testo1113_Bot id=7597499330 - 'Testo123'
+2025-03-29 00:06:16,698 - INFO - Update id=821253921 is handled. Duration 578 ms by bot id=7597499330
+2025-03-29 00:06:32,735 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-29 00:06:32,867 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-29 00:06:38,855 - INFO - Update id=821253922 is handled. Duration 6125 ms by bot id=7597499330

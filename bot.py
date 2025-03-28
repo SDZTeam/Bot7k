@@ -57,12 +57,25 @@ class AccountManager:
                     self.accounts = data.get("accounts", [])
             except FileNotFoundError:
                 await self.save_accounts()
+            except Exception as e:
+                if "database is locked" in str(e).lower():
+                    logging.warning("База данных заблокирована. Повторная попытка...")
+                    raise
+                logging.error(f"Ошибка загрузки аккаунтов: {e}")
+                raise
 
     @retry(wait=wait_fixed(0.5), stop=stop_after_attempt(5))
     async def save_accounts(self):
         async with self.lock:  # Блокировка доступа
-            async with aiofiles.open(f"{DATA_DIR}accounts.json", "w") as f:
-                await f.write(json.dumps({"accounts": self.accounts}, indent=4))
+            try:
+                async with aiofiles.open(f"{DATA_DIR}accounts.json", "w") as f:
+                    await f.write(json.dumps({"accounts": self.accounts}, indent=4))
+            except Exception as e:
+                if "database is locked" in str(e).lower():
+                    logging.warning("База данных заблокирована. Повторная попытка...")
+                    raise
+                logging.error(f"Ошибка сохранения аккаунтов: {e}")
+                raise
 
 
 
@@ -111,12 +124,25 @@ class GroupManager:
                     self.groups = json.loads(content).get("groups", [])
             except FileNotFoundError:
                 await self.save_groups()
+            except Exception as e:
+                if "database is locked" in str(e).lower():
+                    logging.warning("База данных заблокирована. Повторная попытка...")
+                    raise
+                logging.error(f"Ошибка загрузки групп: {e}")
+                raise
 
     @retry(wait=wait_fixed(0.5), stop=stop_after_attempt(5))
     async def save_groups(self):
         async with self.lock:  # Блокировка доступа
-            async with aiofiles.open(f"{DATA_DIR}groups.json", "w") as f:
-                await f.write(json.dumps({"groups": self.groups}, indent=4))
+            try:
+                async with aiofiles.open(f"{DATA_DIR}groups.json", "w") as f:
+                    await f.write(json.dumps({"groups": self.groups}, indent=4))
+            except Exception as e:
+                if "database is locked" in str(e).lower():
+                    logging.warning("База данных заблокирована. Повторная попытка...")
+                    raise
+                logging.error(f"Ошибка сохранения групп: {e}")
+                raise
 
     def add_group(self, group_id, title, username=None, invite_link=None):
         if not any(g['id'] == group_id for g in self.groups):
@@ -737,18 +763,6 @@ async def delete_account_handler(callback: CallbackQuery):
 
 
 @dp.message(F.text == "Отправить сообщение")
-async def send_message_menu(message: Message):
-    accounts = account_manager.get_all_accounts()
-    if not accounts:
-        await message.answer("📭 Нет доступных аккаунтов!", reply_markup=create_main_menu())
-        return
-
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=acc["phone"], callback_data=f"select_sender_{acc['phone']}")]
-        for acc in accounts
-    ] + [[InlineKeyboardButton(text="🔙 Назад", callback_data="send_msg_back")]])
-
-    await message.answer("👤 Выберите аккаунт для отправки:", reply_markup=keyboard)
 
 
 @dp.callback_query(F.data == "send_msg_back")
