@@ -1,81 +1,445 @@
-2025-03-26 19:43:58,230 - INFO - Start polling
-2025-03-26 19:43:58,640 - INFO - Run polling for bot @Testo1113_Bot id=7597499330 - 'Testo123'
-2025-03-26 19:44:05,894 - INFO - Update id=821253542 is handled. Duration 406 ms by bot id=7597499330
-2025-03-26 19:44:08,049 - INFO - Update id=821253543 is handled. Duration 233 ms by bot id=7597499330
-2025-03-26 19:44:09,811 - INFO - Update id=821253544 is handled. Duration 155 ms by bot id=7597499330
-2025-03-26 19:44:20,913 - INFO - Connecting to 149.154.167.51:443/TcpFull...
-2025-03-26 19:44:22,558 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
-2025-03-26 19:44:23,456 - INFO - Update id=821253545 is handled. Duration 2609 ms by bot id=7597499330
-2025-03-26 19:44:31,736 - INFO - Disconnecting from 149.154.167.51:443/TcpFull...
-2025-03-26 19:44:31,740 - INFO - Disconnection from 149.154.167.51:443/TcpFull complete!
-2025-03-26 19:44:31,749 - INFO - Update id=821253546 is handled. Duration 609 ms by bot id=7597499330
-2025-03-26 19:44:38,720 - INFO - Update id=821253547 is handled. Duration 140 ms by bot id=7597499330
-2025-03-26 19:44:43,672 - INFO - Update id=821253548 is handled. Duration 155 ms by bot id=7597499330
-2025-03-26 19:44:45,781 - INFO - Update id=821253549 is handled. Duration 156 ms by bot id=7597499330
-2025-03-26 19:44:47,935 - INFO - Update id=821253550 is handled. Duration 375 ms by bot id=7597499330
-2025-03-26 19:45:08,965 - INFO - Update id=821253551 is handled. Duration 422 ms by bot id=7597499330
-2025-03-26 19:45:11,724 - INFO - Connecting to 149.154.167.51:443/TcpFull...
-2025-03-26 19:45:11,848 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
-2025-03-26 19:45:12,575 - INFO - Disconnecting from 149.154.167.51:443/TcpFull...
-2025-03-26 19:45:12,575 - INFO - Disconnection from 149.154.167.51:443/TcpFull complete!
-2025-03-26 19:45:12,585 - INFO - Update id=821253552 is handled. Duration 859 ms by bot id=7597499330
-2025-03-26 21:48:12,635 - INFO - Start polling
-2025-03-26 21:48:13,063 - INFO - Run polling for bot @Testo1113_Bot id=7597499330 - 'Testo123'
-2025-03-26 21:48:19,697 - INFO - Update id=821253554 is handled. Duration 436 ms by bot id=7597499330
-2025-03-26 21:48:22,064 - INFO - Update id=821253555 is handled. Duration 171 ms by bot id=7597499330
-2025-03-26 21:48:26,129 - INFO - Update id=821253556 is handled. Duration 157 ms by bot id=7597499330
-2025-03-26 21:48:27,153 - INFO - Update id=821253557 is handled. Duration 156 ms by bot id=7597499330
-2025-03-26 21:48:29,699 - INFO - Update id=821253558 is handled. Duration 171 ms by bot id=7597499330
-2025-03-26 21:48:32,861 - INFO - Update id=821253559 is handled. Duration 156 ms by bot id=7597499330
-2025-03-26 21:48:34,831 - INFO - Update id=821253560 is handled. Duration 296 ms by bot id=7597499330
-2025-03-26 21:49:23,155 - INFO - Update id=821253561 is handled. Duration 516 ms by bot id=7597499330
-2025-03-26 21:49:25,733 - INFO - Connecting to 149.154.167.51:443/TcpFull...
-2025-03-26 21:49:25,858 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
-2025-03-26 21:49:26,641 - INFO - Update id=821253562 is handled. Duration 922 ms by bot id=7597499330
-2025-03-26 21:49:28,223 - INFO - Update id=821253563 is not handled. Duration 0 ms by bot id=7597499330
-2025-03-26 21:49:32,391 - INFO - Update id=821253564 is not handled. Duration 15 ms by bot id=7597499330
-2025-03-26 21:49:33,161 - INFO - Update id=821253565 is not handled. Duration 0 ms by bot id=7597499330
-2025-03-26 21:49:33,619 - INFO - Update id=821253566 is not handled. Duration 0 ms by bot id=7597499330
-2025-03-26 22:06:35,731 - INFO - Start polling
-2025-03-26 22:06:36,140 - INFO - Run polling for bot @Testo1113_Bot id=7597499330 - 'Testo123'
-2025-03-26 22:06:39,193 - INFO - Update id=821253567 is handled. Duration 483 ms by bot id=7597499330
-2025-03-26 22:06:42,373 - INFO - Update id=821253568 is handled. Duration 157 ms by bot id=7597499330
-2025-03-26 22:06:44,173 - INFO - Update id=821253569 is handled. Duration 202 ms by bot id=7597499330
-2025-03-26 22:06:45,099 - INFO - Update id=821253570 is handled. Duration 202 ms by bot id=7597499330
-2025-03-26 22:06:46,091 - INFO - Update id=821253571 is handled. Duration 250 ms by bot id=7597499330
-2025-03-26 22:06:47,958 - INFO - Update id=821253572 is handled. Duration 266 ms by bot id=7597499330
-2025-03-26 22:06:49,062 - INFO - Update id=821253573 is handled. Duration 311 ms by bot id=7597499330
-2025-03-26 22:06:53,872 - INFO - Update id=821253574 is not handled. Duration 16 ms by bot id=7597499330
-2025-03-26 22:06:56,384 - INFO - Update id=821253575 is handled. Duration 500 ms by bot id=7597499330
-2025-03-26 22:06:58,777 - INFO - Update id=821253576 is handled. Duration 156 ms by bot id=7597499330
-2025-03-26 22:07:00,000 - INFO - Update id=821253577 is handled. Duration 172 ms by bot id=7597499330
-2025-03-26 22:07:01,288 - INFO - Update id=821253578 is handled. Duration 360 ms by bot id=7597499330
-2025-03-26 22:07:13,631 - INFO - Update id=821253579 is handled. Duration 563 ms by bot id=7597499330
-2025-03-26 22:07:16,912 - INFO - Update id=821253580 is handled. Duration 344 ms by bot id=7597499330
-2025-03-26 22:07:19,174 - INFO - Update id=821253581 is handled. Duration 467 ms by bot id=7597499330
-2025-03-26 22:07:31,197 - INFO - Connecting to 149.154.167.51:443/TcpFull...
-2025-03-26 22:07:31,321 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
-2025-03-26 22:07:32,355 - INFO - Update id=821253582 is handled. Duration 1172 ms by bot id=7597499330
-2025-03-26 22:08:37,214 - INFO - Update id=821253583 is not handled. Duration 15 ms by bot id=7597499330
-2025-03-26 22:08:40,626 - INFO - Update id=821253584 is not handled. Duration 16 ms by bot id=7597499330
-2025-03-26 22:08:41,617 - INFO - Update id=821253585 is not handled. Duration 0 ms by bot id=7597499330
-2025-03-26 22:08:41,771 - INFO - Update id=821253586 is not handled. Duration 0 ms by bot id=7597499330
-2025-03-26 22:08:47,273 - INFO - Update id=821253587 is handled. Duration 453 ms by bot id=7597499330
-2025-03-26 22:08:49,561 - INFO - Update id=821253588 is handled. Duration 218 ms by bot id=7597499330
-2025-03-26 22:08:51,798 - INFO - Update id=821253589 is handled. Duration 295 ms by bot id=7597499330
-2025-03-26 22:08:55,672 - INFO - Update id=821253590 is handled. Duration 155 ms by bot id=7597499330
-2025-03-26 22:08:57,464 - INFO - Update id=821253591 is handled. Duration 281 ms by bot id=7597499330
-2025-03-26 22:08:59,921 - INFO - Update id=821253592 is handled. Duration 186 ms by bot id=7597499330
-2025-03-26 22:09:39,478 - INFO - Update id=821253593 is handled. Duration 608 ms by bot id=7597499330
-2025-03-26 22:17:19,296 - INFO - Start polling
-2025-03-26 22:17:19,710 - INFO - Run polling for bot @Testo1113_Bot id=7597499330 - 'Testo123'
-2025-03-26 22:17:23,377 - INFO - Update id=821253594 is handled. Duration 532 ms by bot id=7597499330
-2025-03-26 22:17:27,692 - INFO - Update id=821253595 is handled. Duration 141 ms by bot id=7597499330
-2025-03-26 22:17:29,659 - INFO - Update id=821253596 is handled. Duration 156 ms by bot id=7597499330
-2025-03-26 22:17:31,391 - INFO - Update id=821253597 is handled. Duration 219 ms by bot id=7597499330
-2025-03-26 22:17:32,680 - INFO - Update id=821253598 is handled. Duration 186 ms by bot id=7597499330
-2025-03-26 22:17:34,389 - INFO - Update id=821253599 is handled. Duration 219 ms by bot id=7597499330
-2025-03-26 22:17:35,695 - INFO - Update id=821253600 is handled. Duration 280 ms by bot id=7597499330
-2025-03-26 22:17:38,990 - INFO - Update id=821253601 is handled. Duration 593 ms by bot id=7597499330
-2025-03-26 22:17:45,598 - INFO - Update id=821253602 is handled. Duration 156 ms by bot id=7597499330
-2025-03-26 22:17:47,568 - INFO - Update id=821253603 is handled. Duration 155 ms by bot id=7597499330
+2025-03-28 20:54:41,691 - INFO - Start polling
+2025-03-28 20:54:42,103 - INFO - Run polling for bot @Testo1113_Bot id=7597499330 - 'Testo123'
+2025-03-28 20:55:00,661 - INFO - Update id=821253725 is handled. Duration 436 ms by bot id=7597499330
+2025-03-28 20:55:02,931 - INFO - Update id=821253726 is handled. Duration 202 ms by bot id=7597499330
+2025-03-28 20:55:12,271 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 20:55:13,692 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-28 20:55:14,673 - INFO - Update id=821253727 is handled. Duration 2438 ms by bot id=7597499330
+2025-03-28 20:55:22,459 - INFO - Update id=821253728 is handled. Duration 608 ms by bot id=7597499330
+2025-03-28 20:55:32,639 - INFO - Update id=821253729 is handled. Duration 171 ms by bot id=7597499330
+2025-03-28 20:55:34,879 - INFO - Update id=821253730 is handled. Duration 155 ms by bot id=7597499330
+2025-03-28 20:55:36,830 - INFO - Update id=821253731 is handled. Duration 312 ms by bot id=7597499330
+2025-03-28 20:55:41,657 - INFO - Update id=821253732 is handled. Duration 172 ms by bot id=7597499330
+2025-03-28 20:55:43,423 - INFO - Update id=821253733 is not handled. Duration 156 ms by bot id=7597499330
+2025-03-28 20:55:43,423 - ERROR - Cause exception while process update id=821253733 by bot id=7597499330
+TypeError: handle_errors() missing 1 required positional argument: 'exception'
+Traceback (most recent call last):
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 27, in __call__
+    return await handler(event, data)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\fsm\middleware.py", line 39, in __call__
+    return await handler(event, data)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\event\telegram.py", line 120, in trigger
+    return await wrapped_inner(event, kwargs)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\event\handler.py", line 42, in call
+    return await wrapped()
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\dispatcher.py", line 275, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\router.py", line 116, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\router.py", line 111, in _wrapped
+    return await self._propagate_event(
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\router.py", line 136, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\event\telegram.py", line 120, in trigger
+    return await wrapped_inner(event, kwargs)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\event\handler.py", line 42, in call
+    return await wrapped()
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\bot.py", line 829, in process_message_selection
+    await client.disconnect()  # Добавьте отключение
+UnboundLocalError: local variable 'client' referenced before assignment
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\dispatcher.py", line 308, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\dispatcher.py", line 157, in feed_update
+    response = await self.update.wrap_outer_middleware(
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 29, in __call__
+    response = await self.router.propagate_event(
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\router.py", line 116, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\router.py", line 111, in _wrapped
+    return await self._propagate_event(
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\router.py", line 136, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\event\telegram.py", line 120, in trigger
+    return await wrapped_inner(event, kwargs)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\event\handler.py", line 42, in call
+    return await wrapped()
+TypeError: handle_errors() missing 1 required positional argument: 'exception'
+2025-03-28 20:55:47,828 - INFO - Update id=821253734 is not handled. Duration 0 ms by bot id=7597499330
+2025-03-28 20:55:49,883 - INFO - Update id=821253735 is not handled. Duration 0 ms by bot id=7597499330
+2025-03-28 20:55:53,238 - INFO - Update id=821253736 is not handled. Duration 0 ms by bot id=7597499330
+2025-03-28 20:55:58,773 - INFO - Update id=821253737 is handled. Duration 359 ms by bot id=7597499330
+2025-03-28 20:56:00,656 - INFO - Update id=821253738 is not handled. Duration 0 ms by bot id=7597499330
+2025-03-28 20:56:03,626 - INFO - Update id=821253739 is not handled. Duration 0 ms by bot id=7597499330
+2025-03-28 20:56:04,419 - INFO - Update id=821253740 is not handled. Duration 16 ms by bot id=7597499330
+2025-03-28 20:56:04,928 - INFO - Update id=821253741 is not handled. Duration 0 ms by bot id=7597499330
+2025-03-28 20:56:05,231 - INFO - Update id=821253742 is not handled. Duration 14 ms by bot id=7597499330
+2025-03-28 20:56:05,406 - INFO - Update id=821253743 is not handled. Duration 15 ms by bot id=7597499330
+2025-03-28 20:56:05,639 - INFO - Update id=821253744 is not handled. Duration 16 ms by bot id=7597499330
+2025-03-28 20:56:09,789 - INFO - Update id=821253745 is handled. Duration 202 ms by bot id=7597499330
+2025-03-28 20:56:11,968 - INFO - Update id=821253746 is handled. Duration 203 ms by bot id=7597499330
+2025-03-28 20:56:14,193 - INFO - Update id=821253747 is handled. Duration 297 ms by bot id=7597499330
+2025-03-28 20:56:18,353 - INFO - Update id=821253748 is handled. Duration 156 ms by bot id=7597499330
+2025-03-28 20:56:19,889 - INFO - Update id=821253749 is handled. Duration 157 ms by bot id=7597499330
+2025-03-28 20:56:21,459 - INFO - Update id=821253750 is handled. Duration 219 ms by bot id=7597499330
+2025-03-28 20:56:24,900 - INFO - Update id=821253751 is handled. Duration 157 ms by bot id=7597499330
+2025-03-28 20:56:26,480 - INFO - Update id=821253752 is handled. Duration 235 ms by bot id=7597499330
+2025-03-28 20:56:28,386 - INFO - Update id=821253753 is handled. Duration 687 ms by bot id=7597499330
+2025-03-28 20:57:03,018 - INFO - Update id=821253754 is handled. Duration 437 ms by bot id=7597499330
+2025-03-28 20:57:06,325 - INFO - Update id=821253755 is not handled. Duration 172 ms by bot id=7597499330
+2025-03-28 20:57:06,325 - ERROR - Cause exception while process update id=821253755 by bot id=7597499330
+TypeError: handle_errors() missing 1 required positional argument: 'exception'
+Traceback (most recent call last):
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 27, in __call__
+    return await handler(event, data)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\fsm\middleware.py", line 39, in __call__
+    return await handler(event, data)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\event\telegram.py", line 120, in trigger
+    return await wrapped_inner(event, kwargs)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\event\handler.py", line 42, in call
+    return await wrapped()
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\dispatcher.py", line 275, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\router.py", line 116, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\router.py", line 111, in _wrapped
+    return await self._propagate_event(
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\router.py", line 136, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\event\telegram.py", line 120, in trigger
+    return await wrapped_inner(event, kwargs)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\event\handler.py", line 42, in call
+    return await wrapped()
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\bot.py", line 829, in process_message_selection
+    await client.disconnect()  # Добавьте отключение
+UnboundLocalError: local variable 'client' referenced before assignment
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\dispatcher.py", line 308, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\dispatcher.py", line 157, in feed_update
+    response = await self.update.wrap_outer_middleware(
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 29, in __call__
+    response = await self.router.propagate_event(
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\router.py", line 116, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\router.py", line 111, in _wrapped
+    return await self._propagate_event(
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\router.py", line 136, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\event\telegram.py", line 120, in trigger
+    return await wrapped_inner(event, kwargs)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\event\handler.py", line 42, in call
+    return await wrapped()
+TypeError: handle_errors() missing 1 required positional argument: 'exception'
+2025-03-28 21:07:18,583 - INFO - Polling stopped for bot @Testo1113_Bot id=7597499330 - 'Testo123'
+2025-03-28 21:07:18,583 - INFO - Polling stopped
+2025-03-28 21:07:18,585 - INFO - Бот остановлен пользователем
+2025-03-28 21:07:20,929 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 21:07:21,060 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-28 21:07:21,637 - INFO - Start polling
+2025-03-28 21:07:22,181 - INFO - Run polling for bot @Testo1113_Bot id=7597499330 - 'Testo123'
+2025-03-28 21:07:33,151 - INFO - Polling stopped for bot @Testo1113_Bot id=7597499330 - 'Testo123'
+2025-03-28 21:07:33,151 - INFO - Polling stopped
+2025-03-28 21:07:33,152 - INFO - Бот остановлен пользователем
+2025-03-28 21:08:23,091 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 21:08:23,222 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-28 21:08:24,049 - INFO - Start polling
+2025-03-28 21:08:24,460 - INFO - Run polling for bot @Testo1113_Bot id=7597499330 - 'Testo123'
+2025-03-28 21:08:45,952 - INFO - Update id=821253756 is handled. Duration 437 ms by bot id=7597499330
+2025-03-28 21:08:53,470 - INFO - Update id=821253757 is handled. Duration 203 ms by bot id=7597499330
+2025-03-28 21:08:55,596 - INFO - Update id=821253758 is handled. Duration 453 ms by bot id=7597499330
+2025-03-28 21:09:15,778 - INFO - Update id=821253759 is not handled. Duration 15 ms by bot id=7597499330
+2025-03-28 21:09:33,558 - INFO - Update id=821253760 is not handled. Duration 16 ms by bot id=7597499330
+2025-03-28 21:09:39,417 - INFO - Update id=821253761 is handled. Duration 438 ms by bot id=7597499330
+2025-03-28 21:09:42,611 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 21:09:42,743 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-28 21:09:43,892 - INFO - Update id=821253762 is handled. Duration 1282 ms by bot id=7597499330
+2025-03-28 21:09:56,949 - INFO - Update id=821253763 is not handled. Duration 15 ms by bot id=7597499330
+2025-03-28 21:10:05,036 - INFO - Update id=821253764 is handled. Duration 561 ms by bot id=7597499330
+2025-03-28 21:10:07,066 - INFO - Update id=821253765 is handled. Duration 172 ms by bot id=7597499330
+2025-03-28 21:10:08,696 - INFO - Update id=821253766 is handled. Duration 313 ms by bot id=7597499330
+2025-03-28 21:10:11,364 - INFO - Update id=821253767 is handled. Duration 170 ms by bot id=7597499330
+2025-03-28 21:10:13,251 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 21:10:13,381 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-28 21:10:19,082 - INFO - Update id=821253768 is handled. Duration 5844 ms by bot id=7597499330
+2025-03-28 21:10:29,794 - ERROR - Task was destroyed but it is pending!
+task: <Task pending name='Task-84' coro=<Connection._send_loop() running at C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\network\connection\connection.py:322> wait_for=<Future pending cb=[Task.task_wakeup()]>>
+2025-03-28 21:10:29,794 - ERROR - Task was destroyed but it is pending!
+task: <Task pending name='Task-85' coro=<Connection._recv_loop() running at C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\network\connection\connection.py:341> wait_for=<Future pending cb=[Task.task_wakeup()]>>
+2025-03-28 21:10:29,794 - ERROR - Task was destroyed but it is pending!
+task: <Task pending name='Task-86' coro=<MTProtoSender._send_loop() running at C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\network\mtprotosender.py:464> wait_for=<Future pending cb=[Task.task_wakeup()]>>
+2025-03-28 21:10:29,794 - ERROR - Task was destroyed but it is pending!
+task: <Task pending name='Task-87' coro=<MTProtoSender._recv_loop() running at C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\network\mtprotosender.py:507> wait_for=<Future pending cb=[Task.task_wakeup()]>>
+2025-03-28 21:10:30,073 - INFO - Update id=821253769 is handled. Duration 469 ms by bot id=7597499330
+2025-03-28 21:10:33,215 - INFO - Update id=821253770 is handled. Duration 438 ms by bot id=7597499330
+2025-03-28 21:10:34,900 - INFO - Update id=821253771 is handled. Duration 516 ms by bot id=7597499330
+2025-03-28 21:10:35,763 - INFO - Update id=821253772 is handled. Duration 484 ms by bot id=7597499330
+2025-03-28 21:10:36,634 - INFO - Update id=821253773 is handled. Duration 421 ms by bot id=7597499330
+2025-03-28 21:10:37,189 - INFO - Update id=821253774 is handled. Duration 391 ms by bot id=7597499330
+2025-03-28 21:10:41,010 - INFO - Update id=821253775 is handled. Duration 311 ms by bot id=7597499330
+2025-03-28 21:10:41,243 - INFO - Update id=821253776 is not handled. Duration 405 ms by bot id=7597499330
+2025-03-28 21:10:41,243 - ERROR - Cause exception while process update id=821253776 by bot id=7597499330
+TypeError: handle_errors() missing 1 required positional argument: 'exception'
+Traceback (most recent call last):
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 27, in __call__
+    return await handler(event, data)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\fsm\middleware.py", line 39, in __call__
+    return await handler(event, data)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\event\telegram.py", line 120, in trigger
+    return await wrapped_inner(event, kwargs)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\event\handler.py", line 42, in call
+    return await wrapped()
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\dispatcher.py", line 275, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\router.py", line 116, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\router.py", line 111, in _wrapped
+    return await self._propagate_event(
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\router.py", line 136, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\event\telegram.py", line 120, in trigger
+    return await wrapped_inner(event, kwargs)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\event\handler.py", line 42, in call
+    return await wrapped()
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\bot.py", line 785, in handle_message_pagination
+    await callback.message.edit_reply_markup(
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\methods\base.py", line 84, in emit
+    return await bot(self)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\client\bot.py", line 432, in __call__
+    return await self.session(self, method, timeout=request_timeout)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\client\session\base.py", line 257, in __call__
+    return cast(TelegramType, await middleware(bot, method))
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\client\session\aiohttp.py", line 175, in make_request
+    response = self.check_response(
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\client\session\base.py", line 120, in check_response
+    raise TelegramBadRequest(method=method, message=description)
+aiogram.exceptions.TelegramBadRequest: Telegram server says - Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\dispatcher.py", line 308, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\dispatcher.py", line 157, in feed_update
+    response = await self.update.wrap_outer_middleware(
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 29, in __call__
+    response = await self.router.propagate_event(
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\router.py", line 116, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\router.py", line 111, in _wrapped
+    return await self._propagate_event(
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\router.py", line 136, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\event\telegram.py", line 120, in trigger
+    return await wrapped_inner(event, kwargs)
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\aiogram\dispatcher\event\handler.py", line 42, in call
+    return await wrapped()
+TypeError: handle_errors() missing 1 required positional argument: 'exception'
+2025-03-28 21:10:41,999 - INFO - Update id=821253777 is handled. Duration 561 ms by bot id=7597499330
+2025-03-28 21:10:42,916 - INFO - Update id=821253778 is handled. Duration 297 ms by bot id=7597499330
+2025-03-28 21:10:47,500 - INFO - Update id=821253779 is handled. Duration 327 ms by bot id=7597499330
+2025-03-28 21:11:07,780 - INFO - Polling stopped for bot @Testo1113_Bot id=7597499330 - 'Testo123'
+2025-03-28 21:11:07,780 - INFO - Polling stopped
+2025-03-28 21:11:07,781 - INFO - Бот остановлен пользователем
+2025-03-28 21:11:07,829 - ERROR - Task exception was never retrieved
+future: <Task finished name='Task-8' coro=<UpdateMethods._keepalive_loop() done, defined at C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\client\updates.py:481> exception=OperationalError('database is locked')>
+Traceback (most recent call last):
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\client\updates.py", line 517, in _keepalive_loop
+    self._save_states_and_entities()
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\client\telegrambaseclient.py", line 694, in _save_states_and_entities
+    self.session.process_entities(types.contacts.ResolvedPeer(None, [e._as_input_peer() for e in entities], []))
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\sessions\sqlite.py", line 301, in process_entities
+    c.executemany(
+sqlite3.OperationalError: database is locked
+2025-03-28 21:11:10,439 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 21:11:10,573 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-28 21:11:11,381 - INFO - Start polling
+2025-03-28 21:11:11,792 - INFO - Run polling for bot @Testo1113_Bot id=7597499330 - 'Testo123'
+2025-03-28 21:11:17,067 - INFO - Update id=821253780 is handled. Duration 468 ms by bot id=7597499330
+2025-03-28 21:11:19,383 - INFO - Update id=821253781 is handled. Duration 171 ms by bot id=7597499330
+2025-03-28 21:11:21,367 - INFO - Update id=821253782 is handled. Duration 500 ms by bot id=7597499330
+2025-03-28 21:11:49,223 - INFO - Update id=821253783 is handled. Duration 438 ms by bot id=7597499330
+2025-03-28 21:11:52,674 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 21:11:52,807 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-28 21:11:58,490 - INFO - Update id=821253784 is handled. Duration 5811 ms by bot id=7597499330
+2025-03-28 21:13:22,939 - WARNING - Server closed the connection: 0 bytes read on a total of 8 expected bytes
+2025-03-28 21:13:22,940 - INFO - Connection closed while receiving data: 0 bytes read on a total of 8 expected bytes
+2025-03-28 21:13:22,940 - INFO - Closing current connection to begin reconnect...
+2025-03-28 21:13:22,940 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 21:13:23,071 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-28 21:24:15,094 - WARNING - Server closed the connection: 0 bytes read on a total of 8 expected bytes
+2025-03-28 21:24:15,094 - INFO - Connection closed while receiving data: 0 bytes read on a total of 8 expected bytes
+2025-03-28 21:24:15,095 - INFO - Closing current connection to begin reconnect...
+2025-03-28 21:24:15,095 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 21:24:15,227 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-28 21:26:11,532 - WARNING - Server closed the connection: [WinError 64] Указанное сетевое имя более недоступно
+2025-03-28 21:26:11,532 - INFO - Connection closed while receiving data: [WinError 64] Указанное сетевое имя более недоступно
+2025-03-28 21:26:11,533 - INFO - Closing current connection to begin reconnect...
+2025-03-28 21:26:11,533 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 21:26:11,534 - INFO - <class 'ConnectionResetError'> during disconnect: [WinError 64] Указанное сетевое имя более недоступно
+2025-03-28 21:26:11,666 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-28 21:26:17,323 - WARNING - Error executing high-level request after reconnect: <class 'sqlite3.OperationalError'>: database is locked
+2025-03-28 21:26:22,842 - WARNING - Cannot get difference since the account is likely misusing the session: database is locked
+2025-03-28 21:26:22,844 - INFO - Disconnecting from 149.154.167.51:443/TcpFull...
+2025-03-28 21:26:22,847 - INFO - Disconnection from 149.154.167.51:443/TcpFull complete!
+2025-03-28 21:26:22,847 - ERROR - Unhandled exception from keepalive_handle after cancelling <class '_asyncio.Task'> (<Task finished name='Task-8' coro=<UpdateMethods._keepalive_loop() done, defined at C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\client\updates.py:481> exception=OperationalError('database is locked')>)
+Traceback (most recent call last):
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\helpers.py", line 176, in _cancel
+    await task
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\client\updates.py", line 517, in _keepalive_loop
+    self._save_states_and_entities()
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\client\telegrambaseclient.py", line 694, in _save_states_and_entities
+    self.session.process_entities(types.contacts.ResolvedPeer(None, [e._as_input_peer() for e in entities], []))
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\sessions\sqlite.py", line 301, in process_entities
+    c.executemany(
+sqlite3.OperationalError: database is locked
+2025-03-28 21:26:28,378 - ERROR - Task exception was never retrieved
+future: <Task finished name='Task-174' coro=<TelegramBaseClient._disconnect_coro() done, defined at C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\client\telegrambaseclient.py:707> exception=OperationalError('database is locked')>
+Traceback (most recent call last):
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\client\telegrambaseclient.py", line 737, in _disconnect_coro
+    self._save_states_and_entities()
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\client\telegrambaseclient.py", line 694, in _save_states_and_entities
+    self.session.process_entities(types.contacts.ResolvedPeer(None, [e._as_input_peer() for e in entities], []))
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\sessions\sqlite.py", line 301, in process_entities
+    c.executemany(
+sqlite3.OperationalError: database is locked
+2025-03-28 21:35:20,343 - INFO - Polling stopped for bot @Testo1113_Bot id=7597499330 - 'Testo123'
+2025-03-28 21:35:20,343 - INFO - Polling stopped
+2025-03-28 21:35:20,344 - INFO - Бот остановлен пользователем
+2025-03-28 21:35:22,575 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 21:35:22,707 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-28 21:35:23,281 - INFO - Start polling
+2025-03-28 21:35:23,820 - INFO - Run polling for bot @Testo1113_Bot id=7597499330 - 'Testo123'
+2025-03-28 21:36:06,232 - INFO - Update id=821253785 is handled. Duration 467 ms by bot id=7597499330
+2025-03-28 21:36:08,136 - INFO - Update id=821253786 is handled. Duration 250 ms by bot id=7597499330
+2025-03-28 21:36:09,329 - INFO - Update id=821253787 is handled. Duration 265 ms by bot id=7597499330
+2025-03-28 21:36:11,177 - INFO - Update id=821253788 is handled. Duration 156 ms by bot id=7597499330
+2025-03-28 21:36:12,430 - INFO - Update id=821253789 is handled. Duration 172 ms by bot id=7597499330
+2025-03-28 21:36:13,985 - INFO - Update id=821253790 is handled. Duration 295 ms by bot id=7597499330
+2025-03-28 21:36:18,148 - INFO - Update id=821253791 is handled. Duration 187 ms by bot id=7597499330
+2025-03-28 21:36:19,494 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 21:36:19,624 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-28 21:36:25,287 - INFO - Update id=821253792 is handled. Duration 5797 ms by bot id=7597499330
+2025-03-28 21:37:49,758 - WARNING - Server closed the connection: 0 bytes read on a total of 8 expected bytes
+2025-03-28 21:37:49,758 - INFO - Connection closed while receiving data: 0 bytes read on a total of 8 expected bytes
+2025-03-28 21:37:49,758 - INFO - Closing current connection to begin reconnect...
+2025-03-28 21:37:49,758 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 21:37:49,892 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-28 21:41:54,204 - INFO - Polling stopped for bot @Testo1113_Bot id=7597499330 - 'Testo123'
+2025-03-28 21:41:54,204 - INFO - Polling stopped
+2025-03-28 21:41:54,207 - INFO - Бот остановлен пользователем
+2025-03-28 21:41:54,261 - ERROR - Task exception was never retrieved
+future: <Task finished name='Task-8' coro=<UpdateMethods._keepalive_loop() done, defined at C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\client\updates.py:481> exception=OperationalError('database is locked')>
+Traceback (most recent call last):
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\client\updates.py", line 517, in _keepalive_loop
+    self._save_states_and_entities()
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\client\telegrambaseclient.py", line 694, in _save_states_and_entities
+    self.session.process_entities(types.contacts.ResolvedPeer(None, [e._as_input_peer() for e in entities], []))
+  File "C:\Users\AORUS\Documents\GitHub\Bot7k\venv\lib\site-packages\telethon\sessions\sqlite.py", line 301, in process_entities
+    c.executemany(
+sqlite3.OperationalError: database is locked
+2025-03-28 21:45:08,834 - INFO - Start polling
+2025-03-28 21:45:09,378 - INFO - Run polling for bot @Testo1113_Bot id=7597499330 - 'Testo123'
+2025-03-28 21:45:20,806 - INFO - Update id=821253793 is handled. Duration 422 ms by bot id=7597499330
+2025-03-28 21:45:24,110 - INFO - Update id=821253794 is handled. Duration 202 ms by bot id=7597499330
+2025-03-28 21:45:26,638 - INFO - Update id=821253795 is handled. Duration 202 ms by bot id=7597499330
+2025-03-28 21:45:38,020 - INFO - Update id=821253796 is handled. Duration 157 ms by bot id=7597499330
+2025-03-28 21:45:49,457 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 21:45:49,588 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-28 21:45:50,906 - WARNING - Telegram is having internal issues AuthRestartError: Restart the authorization process (caused by SendCodeRequest)
+2025-03-28 21:45:51,111 - INFO - Cannot get difference since the account is not logged in: AuthKeyUnregisteredError
+2025-03-28 21:45:51,113 - INFO - Disconnecting from 149.154.167.51:443/TcpFull...
+2025-03-28 21:45:51,113 - INFO - Disconnection from 149.154.167.51:443/TcpFull complete!
+2025-03-28 21:45:53,096 - INFO - Update id=821253797 is handled. Duration 3641 ms by bot id=7597499330
+2025-03-28 21:50:05,571 - INFO - Update id=821253798 is handled. Duration 484 ms by bot id=7597499330
+2025-03-28 21:50:15,773 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 21:50:15,905 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-28 21:50:17,294 - INFO - Update id=821253799 is handled. Duration 1531 ms by bot id=7597499330
+2025-03-28 21:50:24,679 - INFO - Update id=821253800 is handled. Duration 672 ms by bot id=7597499330
+2025-03-28 21:50:28,947 - INFO - Update id=821253801 is handled. Duration 266 ms by bot id=7597499330
+2025-03-28 21:50:31,733 - INFO - Update id=821253802 is handled. Duration 170 ms by bot id=7597499330
+2025-03-28 21:50:33,725 - INFO - Update id=821253803 is handled. Duration 156 ms by bot id=7597499330
+2025-03-28 21:50:35,190 - INFO - Update id=821253804 is handled. Duration 329 ms by bot id=7597499330
+2025-03-28 21:50:39,612 - INFO - Update id=821253805 is handled. Duration 264 ms by bot id=7597499330
+2025-03-28 21:50:40,785 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 21:50:40,916 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-28 21:50:46,747 - INFO - Update id=821253806 is handled. Duration 5968 ms by bot id=7597499330
+2025-03-28 21:52:12,052 - WARNING - Server closed the connection: 0 bytes read on a total of 8 expected bytes
+2025-03-28 21:52:12,052 - INFO - Connection closed while receiving data: 0 bytes read on a total of 8 expected bytes
+2025-03-28 21:52:12,052 - INFO - Closing current connection to begin reconnect...
+2025-03-28 21:52:12,052 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 21:52:12,183 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-28 22:01:08,887 - WARNING - Server closed the connection: 0 bytes read on a total of 8 expected bytes
+2025-03-28 22:01:08,887 - INFO - Connection closed while receiving data: 0 bytes read on a total of 8 expected bytes
+2025-03-28 22:01:08,887 - INFO - Closing current connection to begin reconnect...
+2025-03-28 22:01:08,887 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 22:01:09,020 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-28 22:01:19,488 - WARNING - Server closed the connection: 0 bytes read on a total of 8 expected bytes
+2025-03-28 22:01:19,488 - INFO - Connection closed while receiving data: 0 bytes read on a total of 8 expected bytes
+2025-03-28 22:01:19,488 - INFO - Closing current connection to begin reconnect...
+2025-03-28 22:01:19,489 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 22:01:19,621 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-28 22:01:25,288 - WARNING - Error executing high-level request after reconnect: <class 'sqlite3.OperationalError'>: database is locked
+2025-03-28 22:10:19,613 - WARNING - Server closed the connection: 0 bytes read on a total of 8 expected bytes
+2025-03-28 22:10:19,613 - INFO - Connection closed while receiving data: 0 bytes read on a total of 8 expected bytes
+2025-03-28 22:10:19,614 - INFO - Closing current connection to begin reconnect...
+2025-03-28 22:10:19,614 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 22:10:19,745 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-28 22:10:46,291 - WARNING - Server closed the connection: [WinError 1236] Подключение к сети было разорвано локальной системой
+2025-03-28 22:10:46,293 - WARNING - Server closed the connection: [WinError 1236] Подключение к сети было разорвано локальной системой
+2025-03-28 22:10:46,293 - INFO - Connection closed while receiving data: [WinError 1236] Подключение к сети было разорвано локальной системой
+2025-03-28 22:10:46,293 - INFO - Connection closed while receiving data: [WinError 1236] Подключение к сети было разорвано локальной системой
+2025-03-28 22:10:46,293 - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientOSError: [WinError 1236] Подключение к сети было разорвано локальной системой
+2025-03-28 22:10:46,294 - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 7597499330)
+2025-03-28 22:10:46,300 - INFO - Closing current connection to begin reconnect...
+2025-03-28 22:10:46,300 - INFO - Closing current connection to begin reconnect...
+2025-03-28 22:10:46,301 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 22:10:46,301 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 22:10:46,302 - INFO - <class 'ConnectionAbortedError'> during disconnect: [WinError 1236] Подключение к сети было разорвано локальной системой
+2025-03-28 22:10:46,302 - INFO - <class 'ConnectionAbortedError'> during disconnect: [WinError 1236] Подключение к сети было разорвано локальной системой
+2025-03-28 22:10:46,303 - WARNING - Attempt 1 at connecting failed: PermissionError: [WinError 5] Отказано в доступе
+2025-03-28 22:10:46,303 - WARNING - Attempt 1 at connecting failed: PermissionError: [WinError 5] Отказано в доступе
+2025-03-28 22:10:47,431 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-28 22:10:53,168 - WARNING - Error executing high-level request after reconnect: <class 'sqlite3.OperationalError'>: database is locked
+2025-03-28 22:10:56,425 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-28 22:10:57,789 - INFO - Connection established (tryings = 1, bot id = 7597499330)
+2025-03-28 22:20:39,101 - WARNING - Server closed the connection: 0 bytes read on a total of 8 expected bytes
+2025-03-28 22:20:39,101 - INFO - Connection closed while receiving data: 0 bytes read on a total of 8 expected bytes
+2025-03-28 22:20:39,101 - INFO - Closing current connection to begin reconnect...
+2025-03-28 22:20:39,101 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 22:20:39,220 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-28 22:20:56,078 - WARNING - Server closed the connection: [WinError 64] Указанное сетевое имя более недоступно
+2025-03-28 22:20:56,078 - INFO - Connection closed while receiving data: [WinError 64] Указанное сетевое имя более недоступно
+2025-03-28 22:20:56,078 - INFO - Closing current connection to begin reconnect...
+2025-03-28 22:20:56,079 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 22:20:56,080 - INFO - <class 'ConnectionResetError'> during disconnect: [WinError 64] Указанное сетевое имя более недоступно
+2025-03-28 22:20:56,204 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-28 22:21:01,865 - WARNING - Error executing high-level request after reconnect: <class 'sqlite3.OperationalError'>: database is locked
+2025-03-28 22:28:32,491 - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientOSError: [WinError 1236] Подключение к сети было разорвано локальной системой
+2025-03-28 22:28:32,492 - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 7597499330)
+2025-03-28 22:28:33,451 - WARNING - Server closed the connection: [WinError 1236] Подключение к сети было разорвано локальной системой
+2025-03-28 22:28:33,451 - INFO - Connection closed while receiving data: [WinError 1236] Подключение к сети было разорвано локальной системой
+2025-03-28 22:28:33,451 - INFO - Closing current connection to begin reconnect...
+2025-03-28 22:28:33,451 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 22:28:33,451 - INFO - <class 'ConnectionAbortedError'> during disconnect: [WinError 1236] Подключение к сети было разорвано локальной системой
+2025-03-28 22:28:33,453 - WARNING - Attempt 1 at connecting failed: PermissionError: [WinError 5] Отказано в доступе
+2025-03-28 22:28:33,498 - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Отказано в доступе]
+2025-03-28 22:28:33,498 - WARNING - Sleep for 1.361916 seconds and try again... (tryings = 1, bot id = 7597499330)
+2025-03-28 22:28:34,466 - WARNING - Attempt 2 at connecting failed: PermissionError: [WinError 5] Отказано в доступе
+2025-03-28 22:28:34,875 - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Отказано в доступе]
+2025-03-28 22:28:34,876 - WARNING - Sleep for 1.752177 seconds and try again... (tryings = 2, bot id = 7597499330)
+2025-03-28 22:28:35,476 - WARNING - Attempt 3 at connecting failed: PermissionError: [WinError 5] Отказано в доступе
+2025-03-28 22:28:36,487 - WARNING - Attempt 4 at connecting failed: OSError: [WinError 1232] Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows
+2025-03-28 22:28:36,642 - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2025-03-28 22:28:36,644 - WARNING - Sleep for 2.326407 seconds and try again... (tryings = 3, bot id = 7597499330)
+2025-03-28 22:28:37,498 - WARNING - Attempt 5 at connecting failed: OSError: [WinError 1232] Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows
+2025-03-28 22:28:38,510 - WARNING - Attempt 6 at connecting failed: OSError: [WinError 1232] Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows
+2025-03-28 22:28:38,991 - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2025-03-28 22:28:38,992 - WARNING - Sleep for 3.098104 seconds and try again... (tryings = 4, bot id = 7597499330)
+2025-03-28 22:28:39,519 - INFO - Failed reconnection attempt 1 with ConnectionError
+2025-03-28 22:28:40,528 - INFO - Connecting to 149.154.167.51:443/TcpFull...
+2025-03-28 22:28:40,671 - INFO - Connection to 149.154.167.51:443/TcpFull complete!
+2025-03-28 22:28:46,388 - WARNING - Error executing high-level request after reconnect: <class 'sqlite3.OperationalError'>: database is locked
+2025-03-28 22:28:56,952 - INFO - Connection established (tryings = 5, bot id = 7597499330)

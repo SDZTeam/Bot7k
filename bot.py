@@ -1,3 +1,7 @@
+import asyncio
+from multiprocessing import connection
+import aiofiles
+from tenacity import retry, wait_fixed, stop_after_attempt
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command, StateFilter
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, \
@@ -5,7 +9,7 @@ from aiogram.types import Message, CallbackQuery, ReplyKeyboardMarkup, KeyboardB
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
-from telethon import TelegramClient, types
+from telethon import TelegramClient, connection, types
 from telethon.errors import *
 import json
 import logging
@@ -38,19 +42,26 @@ os.makedirs(DATA_DIR, exist_ok=True)
 class AccountManager:
     def __init__(self):
         self.accounts = []
+        self.lock = asyncio.Semaphore(1)
         self.load_accounts()
 
-    def load_accounts(self):
-        try:
-            with open(f"{DATA_DIR}accounts.json", "r") as f:
-                data = json.load(f)
-                self.accounts = data.get("accounts", [])
-        except FileNotFoundError:
-            self.save_accounts()
+    @retry(wait=wait_fixed(0.5), stop=stop_after_attempt(5))
+    async def load_accounts(self):
+        async with self.lock:
+            try:
+                async with aiofiles.open(f"{DATA_DIR}accounts.json", "r") as f:
+                    content = await f.read()
+                    data = json.loads(content)
+                    self.accounts = data.get("accounts", [])
+            except FileNotFoundError:
+                await self.save_accounts()
 
-    def save_accounts(self):
-        with open(f"{DATA_DIR}accounts.json", "w") as f:
-            json.dump({"accounts": self.accounts}, f, indent=4)
+    @retry(wait=wait_fixed(0.5), stop=stop_after_attempt(5))
+    async def save_accounts(self):
+        async with self.lock:
+            async with aiofiles.open(f"{DATA_DIR}accounts.json", "w") as f:
+                await f.write(json.dumps({"accounts": self.accounts}, indent=4))
+
 
     def add_account(self, phone, session_file):
         if not self.get_account(phone):
@@ -87,16 +98,21 @@ class GroupManager:
         self.groups = []
         self.load_groups()
 
-    def load_groups(self):
-        try:
-            with open(f"{DATA_DIR}groups.json", "r") as f:
-                self.groups = json.load(f).get("groups", [])
-        except FileNotFoundError:
-            self.save_groups()
+    @retry(wait=wait_fixed(0.5), stop=stop_after_attempt(5))
+    async def save_groups(self):
+        async with self.lock:
+            async with aiofiles.open(f"{DATA_DIR}groups.json", "w") as f:
+                await f.write(json.dumps({"groups": self.groups}, indent=4))
 
-    def save_groups(self):
-        with open(f"{DATA_DIR}groups.json", "w") as f:
-            json.dump({"groups": self.groups}, f, indent=4)
+    @retry(wait=wait_fixed(0.5), stop=stop_after_attempt(5))
+    async def load_groups(self):
+        async with self.lock:
+            try:
+                async with aiofiles.open(f"{DATA_DIR}groups.json", "r") as f:
+                    content = await f.read()
+                    self.groups = json.loads(content).get("groups", [])
+            except FileNotFoundError:
+                await self.save_groups()
 
     def add_group(self, group_id, title, username=None, invite_link=None):
         if not any(g['id'] == group_id for g in self.groups):
@@ -166,6 +182,22 @@ def create_accounts_menu():
         resize_keyboard=True
     )
 
+active_clients = {}
+
+async def get_client(phone: str) -> TelegramClient:
+    if phone not in active_clients:
+        account = account_manager.get_account(phone)
+        client = TelegramClient(
+            account["session_file"],
+            API_ID,
+            API_HASH,
+            connection=connection.ConnectionTcpFull,
+            auto_reconnect=True,
+            retry_delay=10
+        )
+        await client.connect()
+        active_clients[phone] = client
+    return active_clients[phone]
 
 def create_groups_menu():
     return ReplyKeyboardMarkup(
@@ -279,7 +311,14 @@ async def process_add_group(message: Message, state: FSMContext):
             return
 
         account = accounts[0]
-        client = TelegramClient(account["session_file"], API_ID, API_HASH)
+        client = TelegramClient(
+            account["session_file"],
+            API_ID,
+            API_HASH,
+            connection=connection.ConnectionTcpFull,
+            auto_reconnect=True,
+            retry_delay=10
+        )
 
         await client.connect()
         if not await client.is_user_authorized():
@@ -517,6 +556,13 @@ async def process_phone(message: Message, state: FSMContext):
         await state.clear()
         return
 
+    # СУУУУУУУУУУУУУУУУУУУУУУУУУУУУКА ТУТ
+    # СУУУУУУУУУУУУУУУУУУУУУУУУУУУУКА ТУТ
+    # СУУУУУУУУУУУУУУУУУУУУУУУУУУУУКА ТУТ
+    # СУУУУУУУУУУУУУУУУУУУУУУУУУУУУКА ТУТ
+    # СУУУУУУУУУУУУУУУУУУУУУУУУУУУУКА ТУТ
+    # СУУУУУУУУУУУУУУУУУУУУУУУУУУУУКА ТУТ
+    # СУУУУУУУУУУУУУУУУУУУУУУУУУУУУКА ТУТ
     client = TelegramClient(session_file, API_ID, API_HASH)
     try:
         await client.connect()
@@ -681,7 +727,7 @@ async def delete_account_handler(callback: CallbackQuery):
     try:
         os.remove(account["session_file"])
         account_manager.accounts = [acc for acc in account_manager.accounts if acc["phone"] != phone]
-        account_manager.save_accounts()
+        await account_manager.save_accounts()
         await callback.answer("✅ Аккаунт удален!")
         await back_to_accounts_list(callback)
     except Exception as e:
@@ -763,38 +809,46 @@ async def process_message_selection(callback: CallbackQuery, state: FSMContext):
         data = await state.get_data()
         phone = data.get("sender_phone")
         target = data.get("target")
-
+        
         if msg_index < 0 or msg_index >= len(PREDEFINED_MESSAGES):
             await callback.answer("❌ Неверный номер сообщения!")
             return
-
+            
         message_text = PREDEFINED_MESSAGES[msg_index]
         account = account_manager.get_account(phone)
-
+        
         if not account:
             await callback.answer("❌ Аккаунт не найден!")
             await state.clear()
             return
-
-        client = TelegramClient(account["session_file"], API_ID, API_HASH)
+            
+        # Создаем клиент с правильным соединением
+        client = TelegramClient(
+            account["session_file"],
+            API_ID,
+            API_HASH,
+            connection=connection.ConnectionTcpFull,  # Используем стандартное соединение
+            auto_reconnect=True,
+            retry_delay=10
+        )
+        
         await client.connect()
-
+        
         if not await client.is_user_authorized():
             await callback.answer("❌ Аккаунт не авторизован!")
             await state.clear()
             return
-
+            
         try:
             entity = await client.get_entity(target)
-
             await client.send_message(entity, message_text)
-
+            
             account["message_history"].append(
                 f"{datetime.now().strftime('%Y-%m-%d %H:%M')} -> {target}: {message_text}"
             )
             account["last_used"] = datetime.now().isoformat()
-            account_manager.save_accounts()
-
+            await account_manager.save_accounts()
+            
             await callback.answer(f"✅ Сообщение #{msg_index + 1} отправлено!")
             await callback.message.answer(
                 f"📨 Сообщение успешно отправлено!\n"
@@ -811,8 +865,7 @@ async def process_message_selection(callback: CallbackQuery, state: FSMContext):
         await callback.answer(f"❌ Ошибка: {str(e)}")
     finally:
         await state.clear()
-
-
+        
 @dp.message(F.text == "Создать сообщение")
 async def create_message_handler(message: Message, state: FSMContext):
     await state.set_state(Form.create_message)
@@ -849,6 +902,55 @@ async def process_create_message(message: Message, state: FSMContext):
     )
     await state.clear()
 
+from aiogram import exceptions
+
+@dp.errors()
+async def handle_errors(update, exception):
+    if isinstance(exception, exceptions.TelegramUnauthorizedError):
+        logging.error("Ошибка авторизации бота! Проверьте токен.")
+        return True
+    elif isinstance(exception, FloodWaitError):
+        wait_time = exception.seconds
+        logging.warning(f"FloodWaitError: ждем {wait_time} секунд")
+        await asyncio.sleep(wait_time)
+        return True
+    return False
+
+async def connect_all_accounts():
+    for acc in account_manager.get_all_accounts():
+        try:
+            client = TelegramClient(
+                acc["session_file"],
+                API_ID,
+                API_HASH,
+                connection=connection.ConnectionTcpFull,
+                auto_reconnect=True,
+                retry_delay=10
+            )
+            await client.connect()
+            if not await client.is_user_authorized():
+                logging.error(f"Аккаунт {acc['phone']} не авторизован!")
+        except Exception as e:
+            logging.error(f"Ошибка подключения {acc['phone']}: {e}")
+
+async def keep_alive():
+    while True:
+        await asyncio.sleep(300)  # Каждые 5 минут
+        for phone in list(active_clients.keys()):
+            try:
+                client = await get_client(phone)
+                await client.get_me()  # Проверка активности
+                logging.info(f"Keep-alive для {phone}")
+            except Exception as e:
+                logging.error(f"Keep-alive ошибка {phone}: {e}")
+
+# В основном блоке
+async def main():
+    await connect_all_accounts()
+    await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    dp.run_polling(bot)
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logging.info("Бот остановлен пользователем")
