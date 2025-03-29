@@ -2,19 +2,22 @@ import asyncio
 import logging
 import os
 import sqlite3
+import json
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
 from telethon import TelegramClient, types
 from telethon.tl.functions.channels import JoinChannelRequest
 from telethon.tl.functions.messages import ImportChatInviteRequest
-from telethon.tl.functions.auth import ResetAuthorizationsRequest
 from telethon.errors import (
     FloodWaitError,
     PhoneCodeInvalidError,
     PhoneCodeExpiredError,
-    SessionPasswordNeededError
+    SessionPasswordNeededError,
+    AuthKeyUnregisteredError,
+    AuthKeyDuplicatedError
 )
+from telethon.network.connection.tcpfull import ConnectionTcpFull
 
 from tenacity import retry, wait_fixed, stop_after_attempt
 from aiogram import Bot, Dispatcher, F, exceptions
@@ -34,11 +37,8 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from config import TELEGRAM_BOT_TOKEN, API_ID, API_HASH, ADMIN_ID
 
 # Constants
-MESSAGE_TYPES = 5
 ACCOUNT_DELAY = timedelta(minutes=1)
-MESSAGE_INTERVAL = timedelta(minutes=2)
 CHAT_DELAY = timedelta(minutes=3)
-PREDEFINED_MESSAGES = [f"Сообщение {i + 1}" for i in range(50)]
 
 # Setup logging
 logging.basicConfig(
@@ -56,8 +56,10 @@ dp = Dispatcher(storage=storage)
 # Data directories
 SESSION_DIR = "sessions/"
 DB_FILE = "data/bot_data.db"
+MESSAGE_FILE = "data/messages.json"
 os.makedirs(SESSION_DIR, exist_ok=True)
 os.makedirs(os.path.dirname(DB_FILE), exist_ok=True)
+os.makedirs(os.path.dirname(MESSAGE_FILE), exist_ok=True)
 
 # Global variables
 scheduler_running = False
@@ -100,6 +102,19 @@ class Database:
         )
         ''')
 
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS mailing_settings (
+            id INTEGER PRIMARY KEY DEFAULT 1,
+            account_interval INTEGER DEFAULT 30,  -- между аккаунтами (минуты)
+            group_interval INTEGER DEFAULT 5,    -- между чатами (секунды)
+            message_interval INTEGER DEFAULT 10, -- между сообщениями (минуты)
+            current_message_idx INTEGER DEFAULT 0,
+            CHECK(id = 1)
+        )
+        ''')
+
+        cursor.execute('INSERT OR IGNORE INTO mailing_settings DEFAULT VALUES')
+
         # Create groups table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS groups (
@@ -124,24 +139,8 @@ class Database:
         )
         ''')
 
-        # Create predefined_messages table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS predefined_messages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            text TEXT NOT NULL,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        )
-        ''')
-
-        # Insert initial predefined messages if table is empty
-        cursor.execute('SELECT COUNT(*) FROM predefined_messages')
-        if cursor.fetchone()[0] == 0:
-            for i, msg in enumerate(PREDEFINED_MESSAGES):
-                cursor.execute(
-                    'INSERT INTO predefined_messages (text) VALUES (?)',
-                    (msg,)
-                )
-
+        # Insert initial settings if not exists
+        cursor.execute('INSERT OR IGNORE INTO mailing_settings DEFAULT VALUES')
         self.conn.commit()
 
     def execute(self, query: str, params: tuple = (), commit: bool = False):
@@ -161,6 +160,15 @@ class Database:
         """Close database connection"""
         if self.conn:
             self.conn.close()
+
+    def is_closed(self) -> bool:
+        """Check if database connection is closed"""
+        return self.conn is None or self.conn.closed
+
+    def reconnect(self):
+        """Reconnect to database if closed"""
+        if self.is_closed():
+            self._initialize_db()
 
 
 class AccountManager:
@@ -182,7 +190,7 @@ class AccountManager:
     async def get_account(self, phone: str) -> Optional[dict]:
         """Get account by phone number"""
         cursor = self.db.execute(
-            'SELECT phone, session_file, last_used FROM accounts WHERE phone = ?',
+            'SELECT phone, session_file, last_used, password FROM accounts WHERE phone = ?',
             (phone,)
         )
         row = cursor.fetchone()
@@ -190,18 +198,20 @@ class AccountManager:
             return {
                 'phone': row[0],
                 'session_file': row[1],
-                'last_used': row[2]
+                'last_used': row[2],
+                'password': row[3]
             }
         return None
 
     async def get_all_accounts(self) -> List[dict]:
         """Get all accounts"""
-        cursor = self.db.execute('SELECT phone, session_file, last_used FROM accounts')
+        cursor = self.db.execute('SELECT phone, session_file, last_used, password FROM accounts')
         return [
             {
                 'phone': row[0],
                 'session_file': row[1],
-                'last_used': row[2]
+                'last_used': row[2],
+                'password': row[3]
             } for row in cursor.fetchall()
         ]
 
@@ -244,12 +254,8 @@ class AccountManager:
 
     async def get_account_password(self, phone: str) -> Optional[str]:
         """Get account password if exists"""
-        cursor = self.db.execute(
-            'SELECT password FROM accounts WHERE phone = ?',
-            (phone,)
-        )
-        row = cursor.fetchone()
-        return row[0] if row else None
+        account = await self.get_account(phone)
+        return account.get('password') if account else None
 
 
 class GroupManager:
@@ -329,18 +335,22 @@ class GroupManager:
             } for row in cursor.fetchall()
         ]
 
-    async def group_exists(self, group_id: int) -> bool:
-        """Check if group exists"""
-        cursor = self.db.execute(
-            'SELECT 1 FROM groups WHERE id = ?',
-            (group_id,)
-        )
-        return cursor.fetchone() is not None
-
 
 class MessageManager:
     def __init__(self, db: Database):
         self.db = db
+        self._load_messages()
+
+    def _load_messages(self):
+        """Load messages from JSON file"""
+        try:
+            if os.path.exists(MESSAGE_FILE):
+                with open(MESSAGE_FILE, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    return data.get('messages', [])
+        except Exception as e:
+            logger.error(f"Error loading messages: {e}")
+        return []
 
     async def add_message(self, account_phone: str, group_id: int, message_text: str) -> bool:
         """Add sent message to history"""
@@ -374,24 +384,105 @@ class MessageManager:
             } for row in cursor.fetchall()
         ]
 
-    async def add_predefined_message(self, text: str) -> bool:
-        """Add new predefined message"""
-        try:
-            self.db.execute(
-                'INSERT INTO predefined_messages (text) VALUES (?)',
-                (text,),
-                commit=True
-            )
-            return True
-        except sqlite3.Error:
+    async def get_mailing_settings(self) -> dict:
+        """Get current mailing settings"""
+        cursor = self.db.execute(
+            'SELECT account_interval, group_interval, message_interval, current_message_idx FROM mailing_settings WHERE id = 1'
+        )
+        row = cursor.fetchone()
+        if row:
+            return {
+                'account_interval': row[0],
+                'group_interval': row[1],
+                'message_interval': row[2],
+                'current_message_idx': row[3]
+            }
+        return {
+            'account_interval': 30,
+            'group_interval': 5,
+            'message_interval': 10,
+            'current_message_idx': 0
+        }
+
+    async def update_mailing_settings(self, message_idx: int = None, account_interval: int = None,
+                                      group_interval: int = None, message_interval: int = None) -> bool:
+        """Update mailing settings"""
+        updates = {}
+        if message_idx is not None:
+            updates['current_message_idx'] = message_idx
+        if account_interval is not None:
+            updates['account_interval'] = account_interval
+        if group_interval is not None:
+            updates['group_interval'] = group_interval
+        if message_interval is not None:
+            updates['message_interval'] = message_interval
+
+        if not updates:
             return False
+
+        set_clause = ', '.join([f"{k} = ?" for k in updates.keys()])
+        values = list(updates.values())
+
+        self.db.execute(
+            f'UPDATE mailing_settings SET {set_clause} WHERE id = 1',
+            tuple(values),
+            commit=True
+        )
+        return True
 
     async def get_predefined_messages(self) -> List[str]:
         """Get all predefined messages"""
-        cursor = self.db.execute(
-            'SELECT text FROM predefined_messages ORDER BY id'
-        )
-        return [row[0] for row in cursor.fetchall()]
+        return self._load_messages()
+
+    async def add_predefined_message(self, text: str) -> bool:
+        """Add new predefined message"""
+        try:
+            messages = self._load_messages()
+            messages.append(text)
+            with open(MESSAGE_FILE, 'w', encoding='utf-8') as f:
+                json.dump({'messages': messages}, f, ensure_ascii=False, indent=2)
+            return True
+        except Exception as e:
+            logger.error(f"Error saving messages: {e}")
+            return False
+
+
+class MailingSettingsManager:
+    def __init__(self, db: Database):
+        self.db = db
+
+    async def get_settings(self) -> dict:
+        cursor = self.db.execute('''
+        SELECT 
+            account_interval,
+            group_interval,
+            message_interval
+        FROM mailing_settings WHERE id = 1
+        ''')
+        row = cursor.fetchone()
+        return {
+            'account_interval': row[0],
+            'group_interval': row[1],
+            'message_interval': row[2]
+        }
+
+    async def update_settings(self, account_interval=None, group_interval=None, message_interval=None):
+        updates = []
+        params = []
+        if account_interval is not None:
+            updates.append("account_interval = ?")
+            params.append(account_interval)
+        if group_interval is not None:
+            updates.append("group_interval = ?")
+            params.append(group_interval)
+        if message_interval is not None:
+            updates.append("message_interval = ?")
+            params.append(message_interval)
+        if not updates:
+            return False
+        query = f"UPDATE mailing_settings SET {', '.join(updates)} WHERE id = 1"
+        self.db.execute(query, tuple(params), commit=True)
+        return True
 
 
 # Initialize database and managers
@@ -399,6 +490,7 @@ db = Database(DB_FILE)
 account_manager = AccountManager(db)
 group_manager = GroupManager(db)
 message_manager = MessageManager(db)
+mailing_settings_manager = MailingSettingsManager(db)
 
 
 class Form(StatesGroup):
@@ -408,6 +500,9 @@ class Form(StatesGroup):
     add_group = State()
     create_message = State()
     confirm_group_deletion = State()
+    select_mailing_message = State()
+    set_mailing_interval = State()
+    set_interval = State()  # Добавляем новое состояние
 
 
 def create_main_menu() -> ReplyKeyboardMarkup:
@@ -440,6 +535,17 @@ def create_groups_menu() -> ReplyKeyboardMarkup:
     )
 
 
+def create_mailing_menu() -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="Выбрать сообщение"), KeyboardButton(text="Установить интервалы рассылки")],
+            [KeyboardButton(text="Запустить рассылку"), KeyboardButton(text="Остановить рассылку")],
+            [KeyboardButton(text="Главное меню")]
+        ],
+        resize_keyboard=True
+    )
+
+
 def create_pagination_keyboard(page: int = 0, total_pages: int = 1, prefix: str = "groups") -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [
@@ -452,37 +558,48 @@ def create_pagination_keyboard(page: int = 0, total_pages: int = 1, prefix: str 
     ])
 
 
-def create_message_keyboard(page: int = 0, per_page: int = 5) -> InlineKeyboardMarkup:
-    messages = PREDEFINED_MESSAGES
-    total_pages = (len(messages) + per_page - 1) // per_page
-    start_idx = page * per_page
-    end_idx = min(start_idx + per_page, len(messages))
+def create_message_selection_keyboard(messages: List[str], page: int = 0) -> InlineKeyboardMarkup:
+    total_messages = len(messages)
+    total_pages = (total_messages + 4) // 5  # 5 сообщений на страницу
+
+    start_idx = page * 5
+    end_idx = min(start_idx + 5, total_messages)
 
     keyboard = []
 
+    # Добавляем кнопки для сообщений на текущей странице
     for i in range(start_idx, end_idx):
+        msg_preview = messages[i][:30] + "..." if len(messages[i]) > 30 else messages[i]
         keyboard.append([InlineKeyboardButton(
-            text=f"Сообщение {i + 1}",
-            callback_data=f"msg_{i}"
+            text=f"Сообщение {i + 1}: {msg_preview}",
+            callback_data=f"select_msg_{i}"
         )])
 
+    # Добавляем кнопки пагинации
     pagination_buttons = []
+
     if page > 0:
         pagination_buttons.append(InlineKeyboardButton(
             text="⬅️ Назад",
-            callback_data=f"msgpage_{page - 1}"
+            callback_data=f"msg_page_{page - 1}"
         ))
+
     if page < total_pages - 1:
         pagination_buttons.append(InlineKeyboardButton(
             text="Вперёд ➡️",
-            callback_data=f"msgpage_{page + 1}"
+            callback_data=f"msg_page_{page + 1}"
         ))
 
     if pagination_buttons:
         keyboard.append(pagination_buttons)
 
-    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+    # Добавляем кнопку для добавления нового сообщения
+    keyboard.append([InlineKeyboardButton(
+        text="➕ Добавить сообщение",
+        callback_data="add_new_message"
+    )])
 
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 def create_group_actions_keyboard(group_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
@@ -494,143 +611,213 @@ def create_group_actions_keyboard(group_id: int) -> InlineKeyboardMarkup:
     ])
 
 
-@retry(wait=wait_fixed(5), stop=stop_after_attempt(3))
-async def get_client(phone: str) -> TelegramClient:
-    from telethon.network.connection.tcpfull import ConnectionTcpFull
+async def authorize_client(phone: str, client: TelegramClient) -> bool:
+    """Полная процедура авторизации с обработкой всех случаев"""
+    try:
+        if not client.is_connected():
+            await client.connect()
 
-    if phone not in active_clients:
-        account = await account_manager.get_account(phone)
-        if not account:
-            raise ValueError(f"Account {phone} not found")
+        # Проверяем существующую авторизацию
+        if await client.is_user_authorized():
+            return True
 
-        if phone not in client_locks:
-            client_locks[phone] = asyncio.Lock()
-
-        async with client_locks[phone]:
-            session_file = os.path.join(SESSION_DIR, f"{phone}.session")
-            client = TelegramClient(
-                session_file,
-                API_ID,
-                API_HASH,
-                connection=ConnectionTcpFull,  # Исправлено здесь
-                auto_reconnect=True,
-                retry_delay=10,
-                device_model="PersistentSession",
-                system_version="10",
-                app_version="10.0",
-                lang_code="en",
-                system_lang_code="en"
-            )
-
+        # Если есть пароль в базе, пробуем им авторизоваться
+        password = await account_manager.get_account_password(phone)
+        if password:
             try:
-                await client.connect()
-                await client(ResetAuthorizationsRequest())
-
-                if not await client.is_user_authorized():
-                    logger.error(f"Account {phone} not authorized!")
-                    raise ValueError(f"Account {phone} not authorized")
-
-                active_clients[phone] = client
-                await account_manager.update_account(phone, last_used=datetime.now().isoformat())
-                await account_manager.add_session(phone, session_file)
-
+                await client.sign_in(password=password)
+                return True
             except Exception as e:
-                logger.error(f"Error creating client for {phone}: {e}")
-                await client.disconnect()
-                raise
+                logger.warning(f"Password auth failed for {phone}: {str(e)}")
 
-    client = active_clients[phone]
-    await account_manager.update_account(phone, last_used=datetime.now().isoformat())
+        # Запрашиваем код
+        sent_code = await client.send_code_request(phone)
+        code = await ask_for_code(phone)  # Функция запроса кода у пользователя
+
+        try:
+            await client.sign_in(phone, code)
+            return True
+        except SessionPasswordNeededError:
+            password = await ask_for_password(phone)  # Функция запроса пароля
+            await client.sign_in(password=password)
+            await account_manager.update_account(phone, password=password)
+            return True
+
+    except Exception as e:
+        logger.error(f"Authorization failed for {phone}: {str(e)}")
+        return False
+
+@retry(wait=wait_fixed(5), stop=stop_after_attempt(5))
+
+async def get_client(phone: str) -> TelegramClient:
+    """Получение авторизованного клиента"""
+    if phone in active_clients:
+        client = active_clients[phone]
+        if client.is_connected() and await client.is_user_authorized():
+            return client
+        else:
+            await client.disconnect()
+            del active_clients[phone]
+
+    session_file = os.path.join(SESSION_DIR, f"{phone}.session")
+    client = TelegramClient(
+        session=session_file,
+        api_id=API_ID,
+        api_hash=API_HASH,
+        connection=ConnectionTcpFull
+    )
+
+    if not await authorize_client(phone, client):
+        raise ValueError(f"Authorization failed for {phone}")
+
+    active_clients[phone] = client
+    asyncio.create_task(_keep_client_alive(client, phone))
     return client
+
+
+async def _keep_client_alive(client: TelegramClient, phone: str):
+    """Поддержание активного соединения"""
+    while phone in active_clients:
+        try:
+            if not client.is_connected():
+                await client.connect()
+
+            if not await client.is_user_authorized():
+                if not await authorize_client(phone, client):
+                    break
+
+            await client.get_me()  # Проверка активности
+            await asyncio.sleep(300)  # Проверка каждые 5 минут
+
+        except Exception as e:
+            logger.error(f"Keep-alive error for {phone}: {str(e)}")
+            await asyncio.sleep(60)
 
 
 async def reconnect_client(phone: str) -> TelegramClient:
     try:
         if phone in active_clients:
             client = active_clients[phone]
-            await client.disconnect()
-            del active_clients[phone]
-
+            # Просто переподключаемся без новой авторизации
+            await client.connect()
+            return client
         client = await get_client(phone)
         await client.connect()
-
-        if not await client.is_user_authorized():
-            logger.error(f"Account {phone} not authorized! Reauthorizing...")
-            raise ConnectionError(f"Account {phone} not authorized")
-
         return client
     except Exception as e:
         logger.error(f"Error reconnecting {phone}: {str(e)}")
         raise
 
 
-async def send_message_to_group(account: Dict, group: Dict, message_type: int) -> bool:
+async def safe_connect(client: TelegramClient):
+    """Простое переподключение без лишних параметров"""
+    if client.is_connected():
+        return
+
+    try:
+        await client.disconnect()
+    except:
+        pass
+
+    await client.connect()
+
+
+async def get_entity_safe(client: TelegramClient, entity):
+    """Safe entity getter with retries"""
+    for attempt in range(3):
+        try:
+            return await client.get_entity(entity)
+        except Exception as e:
+            logger.warning(f"Entity get attempt {attempt + 1} failed: {e}")
+            await asyncio.sleep(2 ** attempt)
+    raise Exception("Failed to get entity after multiple attempts")
+
+
+async def send_message_to_group(account: Dict, group: Dict, message_text: str) -> bool:
     try:
         client = await get_client(account["phone"])
-        messages = await message_manager.get_predefined_messages()
-        message_text = messages[message_type % len(messages)]
 
-        try:
-            if group.get('username'):
-                entity = await client.get_entity(group['username'])
-            elif group.get('invite_link'):
-                if group['invite_link'].startswith("https://t.me/+"):
-                    hash_part = group['invite_link'].split("+")[1]
-                    await client(ImportChatInviteRequest(hash_part))
-                    await asyncio.sleep(2)
-                entity = await client.get_entity(group['invite_link'])
+        if not client.is_connected():
+            await safe_connect(client)
 
-            await client.send_message(entity, message_text)
-            await message_manager.add_message(account["phone"], group['id'], message_text)
-            return True
-        except Exception as e:
-            logger.error(f"Error sending to group {group['title']}: {str(e)}")
+        entity = await resolve_entity(client, group)
+        if not entity:
             return False
-    except Exception as e:
-        logger.error(f"Client error: {str(e)}")
+
+        await client.send_message(entity, message_text)
+        await message_manager.add_message(account["phone"], group['id'], message_text)
+        return True
+
+    except FloodWaitError as e:
+        logger.warning(f"Flood wait for {account['phone']}: {e.seconds} sec")
+        await asyncio.sleep(e.seconds + 5)
         return False
+
+    except Exception as e:
+        logger.error(f"Send message error: {str(e)}")
+        return False
+
+
+async def resolve_entity(client, group):
+    """Универсальное разрешение сущности группы"""
+    try:
+        if group.get('username'):
+            return await client.get_entity(group['username'])
+        elif group.get('invite_link'):
+            if group['invite_link'].startswith("https://t.me/+"):
+                hash_part = group['invite_link'].split("+")[1]
+                await client(ImportChatInviteRequest(hash_part))
+            return await client.get_entity(group['invite_link'])
+    except Exception as e:
+        logger.error(f"Resolve entity error: {str(e)}")
+        return None
 
 
 async def message_scheduler():
     global scheduler_running
     scheduler_running = True
-    message_type = 0
-    last_message_time = {}
-
     while scheduler_running:
         try:
+            settings = await mailing_settings_manager.get_settings()
+            messages = await message_manager.get_predefined_messages()
             accounts = await account_manager.get_all_accounts()
             groups = await group_manager.get_all_groups()
 
-            if not accounts or not groups:
+            if not messages or not accounts or not groups:
                 await asyncio.sleep(60)
                 continue
 
-            current_time = datetime.now()
+            for account_idx, account in enumerate(accounts):
+                for group in groups:
+                    for message_idx, message_text in enumerate(messages):
+                        delay = (
+                                account_idx * settings['account_interval'] * 60 +  # Задержка между аккаунтами
+                                message_idx * settings['message_interval'] * 60  # Задержка между сообщениями
+                        )
 
-            if message_type not in last_message_time or \
-                    (current_time - last_message_time.get(message_type, datetime.min)) >= MESSAGE_INTERVAL:
+                        asyncio.create_task(
+                            send_scheduled_message(
+                                account=account,
+                                group=group,
+                                message_text=message_text,
+                                delay=delay
+                            )
+                        )
+                        await asyncio.sleep(settings['group_interval'])  # Задержка между группами
 
-                for i, account in enumerate(accounts):
-                    start_time = current_time + i * ACCOUNT_DELAY
-
-                    for j, group in enumerate(groups):
-                        send_time = start_time + j * CHAT_DELAY
-
-                        if send_time > current_time:
-                            await asyncio.sleep((send_time - current_time).total_seconds())
-
-                        await send_message_to_group(account, group, message_type + i)
-                        await asyncio.sleep(1)
-
-                last_message_time[message_type] = current_time
-                message_type = (message_type + 1) % MESSAGE_TYPES
-
-            await asyncio.sleep(60)
+            # Ждем завершения цикла перед следующей итерацией
+            await asyncio.sleep(max(settings['account_interval'], settings['message_interval']) * 60)
 
         except Exception as e:
             logger.error(f"Scheduler error: {e}")
             await asyncio.sleep(60)
+
+
+async def send_scheduled_message(account: Dict, group: Dict, message_text: str, delay: int):
+    await asyncio.sleep(delay)
+    success = await send_message_to_group(account, group, message_text)
+    if not success:
+        logger.warning(f"Failed to send message from {account['phone']} to {group['title']}")
 
 
 @dp.message(Command("start"))
@@ -663,6 +850,218 @@ async def account_management(message: Message):
 @dp.message(F.text == "Чаты")
 async def chats_management(message: Message):
     await message.answer("Управление чатами:", reply_markup=create_groups_menu())
+
+
+@dp.message(F.text == "Управление рассылкой")
+async def mailing_management(message: Message):
+    settings = await mailing_settings_manager.get_settings()
+    messages = await message_manager.get_predefined_messages()
+
+    status = "активна" if scheduler_running else "остановлена"
+    current_msg_idx = settings.get('current_message_idx', 0)
+    current_msg = messages[current_msg_idx][:50] + "..." if messages and current_msg_idx < len(messages) else "нет сообщений"
+
+    await message.answer(
+        f"Управление рассылкой:\n"
+        f"Статус: {status}\n"
+        f"Текущее сообщение: {current_msg}\n"
+        f"Интервалы:\n"
+        f"- Между аккаунтами: {settings['account_interval']} мин\n"
+        f"- Между чатами: {settings['group_interval']} сек\n"
+        f"- Между сообщениями: {settings['message_interval']} мин",
+        reply_markup=create_mailing_menu()
+    )
+
+
+@dp.message(F.text == "Установить интервалы рассылки")
+async def set_intervals(message: Message, state: FSMContext):
+    await state.set_state(Form.set_mailing_interval)  # Устанавливаем состояние
+    settings = await mailing_settings_manager.get_settings()
+    await message.answer(
+        f"Текущие настройки интервалов:\n"
+        f"⏳ Между аккаунтами: {settings['account_interval']} мин\n"
+        f"⏳ Между чатами: {settings['group_interval']} сек\n"
+        f"⏳ Между сообщениями: {settings['message_interval']} мин\n\n"
+        f"Выберите, какой интервал изменить:",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(text="Между аккаунтами", callback_data="set_account_interval"),
+                InlineKeyboardButton(text="Между чатами", callback_data="set_group_interval")
+            ],
+            [
+                InlineKeyboardButton(text="Между сообщениями", callback_data="set_message_interval")
+            ]
+        ])
+    )
+
+@dp.message(F.text == "Выбрать сообщение")
+async def select_mailing_message(message: Message, state: FSMContext):
+    messages = await message_manager.get_predefined_messages()
+    if not messages:
+        await message.answer("Нет доступных сообщений. Добавьте сообщения сначала.")
+        return
+
+    await state.set_state(Form.select_mailing_message)
+    await message.answer(
+        "Выберите сообщение для рассылки:",
+        reply_markup=create_message_selection_keyboard(messages)
+    )
+
+
+@dp.callback_query(F.data.startswith("msg_page_"), Form.select_mailing_message)
+async def message_pagination_handler(callback: CallbackQuery, state: FSMContext):
+    page = int(callback.data.split("_")[2])
+    messages = await message_manager.get_predefined_messages()
+
+    await callback.message.edit_reply_markup(
+        reply_markup=create_message_selection_keyboard(messages, page)
+    )
+    await callback.answer()
+
+
+@dp.callback_query(F.data.startswith("select_msg_"), Form.select_mailing_message)
+async def select_message_handler(callback: CallbackQuery, state: FSMContext):
+    message_idx = int(callback.data.split("_")[2])
+    messages = await message_manager.get_predefined_messages()
+
+    if 0 <= message_idx < len(messages):
+        await message_manager.update_mailing_settings(message_idx=message_idx)
+        await callback.answer(f"Выбрано сообщение {message_idx + 1}")
+        await callback.message.edit_text(
+            f"Выбрано сообщение для рассылки:\n{messages[message_idx][:100]}...",
+            reply_markup=None
+        )
+        await state.clear()
+        await mailing_management(callback.message)
+    else:
+        await callback.answer("Неверный индекс сообщения")
+
+
+@dp.callback_query(F.data == "add_new_message", Form.select_mailing_message)
+async def add_new_message_handler(callback: CallbackQuery, state: FSMContext):
+    await callback.message.answer(
+        "Введите текст нового сообщения:",
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard=[[KeyboardButton(text="Отмена")]],
+            resize_keyboard=True
+        )
+    )
+    await state.set_state(Form.create_message)
+    await callback.answer()
+
+
+@dp.message(F.text == "Установить интервалы рассылки")
+async def set_intervals(message: Message, state: FSMContext):
+    settings = await mailing_settings_manager.get_settings()
+    await message.answer(
+        f"Текущие настройки интервалов:\n"
+        f"⏳ Между аккаунтами: {settings['account_interval']} мин\n"
+        f"⏳ Между чатами: {settings['group_interval']} сек\n"
+        f"⏳ Между сообщениями: {settings['message_interval']} мин\n\n"
+        f"Выберите, какой интервал изменить:",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(text="Между аккаунтами", callback_data="set_account_interval"),
+                InlineKeyboardButton(text="Между чатами", callback_data="set_group_interval")
+            ],
+            [
+                InlineKeyboardButton(text="Между сообщениями", callback_data="set_message_interval")
+            ]
+        ])
+    )
+
+
+@dp.callback_query(F.data.startswith("set_"))
+async def set_interval_handler(callback: CallbackQuery, state: FSMContext):
+    interval_type = callback.data.split("_")[1]
+    await state.update_data(interval_type=interval_type)
+    units = "минут" if interval_type != "group" else "секунд"
+    await callback.message.answer(
+        f"Введите новое значение интервала ({units}):",
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard=[[KeyboardButton(text="Отмена")]],
+            resize_keyboard=True
+        )
+    )
+    await state.set_state(Form.set_interval)
+    await callback.answer()
+
+
+@dp.message(Form.set_interval)
+async def process_set_interval(message: Message, state: FSMContext):
+    try:
+        value = int(message.text)
+        if value < 1:
+            raise ValueError("Interval must be at least 1")
+        data = await state.get_data()
+        interval_type = data.get("interval_type")
+        if interval_type == "account":
+            await mailing_settings_manager.update_settings(account_interval=value)
+        elif interval_type == "group":
+            await mailing_settings_manager.update_settings(group_interval=value)
+        elif interval_type == "message":
+            await mailing_settings_manager.update_settings(message_interval=value)
+        await message.answer(
+            f"✅ Интервал успешно установлен!",
+            reply_markup=create_mailing_menu()
+        )
+    except ValueError:
+        await message.answer(
+            "❌ Неверный формат. Введите целое число больше 0.",
+            reply_markup=ReplyKeyboardMarkup(
+                keyboard=[[KeyboardButton(text="Отмена")]],
+                resize_keyboard=True
+            )
+        )
+        return
+    await state.clear()
+
+
+@dp.message(F.text == "Запустить рассылку")
+async def start_mailing(message: Message):
+    global scheduler_running, scheduler_task
+
+    if scheduler_running:
+        await message.answer("Рассылка уже запущена!")
+        return
+
+    messages = await message_manager.get_predefined_messages()
+    if not messages:
+        await message.answer("Нет сообщений для рассылки! Добавьте сообщения сначала.")
+        return
+
+    accounts = await account_manager.get_all_accounts()
+    if not accounts:
+        await message.answer("Нет аккаунтов для рассылки! Добавьте аккаунты сначала.")
+        return
+
+    groups = await group_manager.get_all_groups()
+    if not groups:
+        await message.answer("Нет групп для рассылки! Добавьте группы сначала.")
+        return
+
+    scheduler_task = asyncio.create_task(message_scheduler())
+    await message.answer("✅ Рассылка запущена!", reply_markup=create_mailing_menu())
+
+
+@dp.message(F.text == "Остановить рассылку")
+async def stop_mailing(message: Message):
+    global scheduler_running, scheduler_task
+
+    if not scheduler_running:
+        await message.answer("Рассылка не запущена!")
+        return
+
+    scheduler_running = False
+    if scheduler_task:
+        scheduler_task.cancel()
+        try:
+            await scheduler_task
+        except asyncio.CancelledError:
+            pass
+        scheduler_task = None
+
+    await message.answer("⏸ Рассылка остановлена", reply_markup=create_mailing_menu())
 
 
 @dp.message(F.text == "Добавить группу")
@@ -772,7 +1171,7 @@ async def list_groups(message: Message):
 
     if not groups:
         return await message.answer("Список групп пуст. Добавьте группы через меню.",
-                                    reply_markup=create_groups_menu())
+                                   reply_markup=create_groups_menu())
 
     total_pages = (total_groups + 4) // 5
     current_page = 0
@@ -956,8 +1355,6 @@ async def cancel_add_account(message: Message, state: FSMContext):
 
 @dp.message(Form.enter_phone)
 async def process_phone(message: Message, state: FSMContext):
-    from telethon.network.connection.tcpfull import ConnectionTcpFull  # Добавьте этот импорт
-
     phone = message.text.strip()
     session_file = os.path.join(SESSION_DIR, f"{phone}.session")
 
@@ -967,16 +1364,21 @@ async def process_phone(message: Message, state: FSMContext):
         return
 
     client = TelegramClient(
-        session_file,
-        API_ID,
-        API_HASH,
-        connection=ConnectionTcpFull,  # Исправлено здесь
-        auto_reconnect=True,
-        retry_delay=10
+        session=session_file,
+        api_id=API_ID,
+        api_hash=API_HASH,
+        connection=ConnectionTcpFull,
+        timeout=60,  # Общий таймаут для операций
+        connection_retries=5,
+        retry_delay=10,
+        auto_reconnect=True
     )
 
+    # Подключаемся без параметра timeout
+    await client.connect()
+
     try:
-        await client.connect()
+        await safe_connect(client)  # Используем безопасное подключение
         await client.send_code_request(phone)
         await state.update_data(phone=phone, client=client)
         await message.answer(
@@ -987,12 +1389,14 @@ async def process_phone(message: Message, state: FSMContext):
             )
         )
         await state.set_state(Form.enter_code)
+
     except FloodWaitError as e:
         await message.answer(
             f"Слишком много попыток. Подождите {e.seconds} секунд.",
             reply_markup=create_accounts_menu()
         )
         await state.clear()
+
     except Exception as e:
         await message.answer(
             f"Ошибка: {str(e)}",
@@ -1005,8 +1409,7 @@ async def process_phone(message: Message, state: FSMContext):
 async def cancel_add_account_code(message: Message, state: FSMContext):
     data = await state.get_data()
     client = data.get("client")
-    if client:
-        await client.disconnect()
+    # Не отключаем клиента!
     await state.clear()
     await message.answer("Добавление аккаунта отменено.", reply_markup=create_accounts_menu())
 
@@ -1045,12 +1448,90 @@ async def process_code(message: Message, state: FSMContext):
     await state.clear()
 
 
+class PersistentClient:
+    def __init__(self, phone, session_file):
+        self.phone = phone
+        self.client = TelegramClient(
+            session=session_file,
+            api_id=API_ID,
+            api_hash=API_HASH,
+            connection=ConnectionTcpFull,
+            auto_reconnect=True,
+            connection_retries=float('inf'),  # Бесконечные попытки
+            retry_delay=5,
+            timeout=60
+        )
+        self.lock = asyncio.Lock()
+        self._keep_alive_task = None
+
+    async def ensure_connection(self):
+        async with self.lock:
+            if not self.client.is_connected():
+                await self.client.connect()
+            if not await self.client.is_user_authorized():
+                await self.reauthorize()
+
+    async def reauthorize(self):
+        # Ваша логика авторизации
+        pass
+
+    async def start_keep_alive(self):
+        if not self._keep_alive_task:
+            self._keep_alive_task = asyncio.create_task(self._keep_alive_loop())
+
+    async def _keep_alive_loop(self):
+        while True:
+            try:
+                await self.ensure_connection()
+                await self.client.get_me()  # Проверка активности
+                await asyncio.sleep(300)  # Каждые 5 минут
+            except Exception as e:
+                logger.error(f"Keep-alive error: {e}")
+                await asyncio.sleep(60)
+
+class SessionManager:
+    _instance = None
+    clients = {}
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    async def get_client(self, phone):
+        if phone not in self.clients:
+            session_file = os.path.join(SESSION_DIR, f"{phone}.session")
+            client = PersistentClient(phone, session_file)
+            await client.ensure_connection()
+            await client.start_keep_alive()
+            self.clients[phone] = client
+        return self.clients[phone].client
+
+
+async def send_message_to_group(account, group, message_text):
+    try:
+        manager = SessionManager()
+        client = await manager.get_client(account["phone"])
+
+        entity = await resolve_entity(client, group)
+        await client.send_message(entity, message_text)
+        return True
+    except Exception as e:
+        logger.error(f"Send error: {e}")
+        return False
+
+def handle_exception(loop, context):
+    if "exception" in context:
+        logger.error(f"Event loop error: {context['exception']}")
+    loop.default_exception_handler(context)
+
+loop = asyncio.get_event_loop()
+loop.set_exception_handler(handle_exception)
+
 @dp.message(F.text == "Отмена", Form.enter_password)
 async def cancel_add_account_password(message: Message, state: FSMContext):
     data = await state.get_data()
-    client = data.get("client")
-    if client:
-        await client.disconnect()
+    # Не отключаем клиента!
     await state.clear()
     await message.answer("Добавление аккаунта отменено.", reply_markup=create_accounts_menu())
 
@@ -1134,23 +1615,14 @@ async def back_to_accounts_list(callback: CallbackQuery):
 async def delete_account_handler(callback: CallbackQuery):
     phone = callback.data.split("_")[2]
     account = await account_manager.get_account(phone)
-
     if not account:
         await callback.answer("Аккаунт не найден!")
         return
-
     try:
         if phone in active_clients:
-            client = active_clients[phone]
-            await client.disconnect()
             del active_clients[phone]
-
-        session_file = account["session_file"]
-        if os.path.exists(session_file):
-            os.remove(session_file)
-
         await account_manager.remove_account(phone)
-        await callback.answer("✅ Аккаунт удален!")
+        await callback.answer("✅ Аккаунт удален из списка!")
         await back_to_accounts_list(callback)
     except Exception as e:
         await callback.answer(f"❌ Ошибка: {str(e)}")
@@ -1199,105 +1671,51 @@ async def process_create_message(message: Message, state: FSMContext):
     await state.clear()
 
 
-@dp.message(F.text == "Управление рассылкой")
-async def manage_scheduler(message: Message):
-    global scheduler_running, scheduler_task
-
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(
-                text="⏸ Остановить" if scheduler_running else "▶️ Запустить",
-                callback_data="toggle_scheduler"
-            )
-        ],
-        [
-            InlineKeyboardButton(text="🔄 Статус", callback_data="scheduler_status"),
-            InlineKeyboardButton(text="❌ Закрыть", callback_data="close_scheduler_menu")
-        ]
-    ])
-
-    status = "активна" if scheduler_running else "остановлена"
-    await message.answer(
-        f"Текущий статус рассылки: {status}\n"
-        f"Настройки:\n"
-        f"- Типов сообщений: {MESSAGE_TYPES}\n"
-        f"- Интервал между типами: {MESSAGE_INTERVAL}\n"
-        f"- Задержка между аккаунтами: {ACCOUNT_DELAY}\n"
-        f"- Задержка между чатами: {CHAT_DELAY}",
-        reply_markup=keyboard
-    )
-
-
-@dp.callback_query(F.data == "toggle_scheduler")
-async def toggle_scheduler(callback: CallbackQuery):
-    global scheduler_running, scheduler_task
-
-    if scheduler_running:
-        scheduler_running = False
-        if scheduler_task:
-            scheduler_task.cancel()
-            try:
-                await scheduler_task
-            except asyncio.CancelledError:
-                pass
-            scheduler_task = None
-        await callback.answer("Рассылка остановлена")
-    else:
-        scheduler_running = True
-        scheduler_task = asyncio.create_task(message_scheduler())
-        await callback.answer("Рассылка запущена")
-
-    await manage_scheduler(callback.message)
-
-
-@dp.callback_query(F.data == "scheduler_status")
-async def scheduler_status(callback: CallbackQuery):
-    accounts = await account_manager.get_all_accounts()
-    groups = await group_manager.get_all_groups()
-    messages = await message_manager.get_predefined_messages()
-
-    status = (
-        f"Статус рассылки:\n"
-        f"- Аккаунтов: {len(accounts)}\n"
-        f"- Чатов: {len(groups)}\n"
-        f"- Сообщений: {len(messages)}\n"
-        f"- Работает: {'да' if scheduler_running else 'нет'}"
-    )
-
-    await callback.answer(status, show_alert=True)
-
-
-@dp.callback_query(F.data == "close_scheduler_menu")
-async def close_scheduler_menu(callback: CallbackQuery):
-    await callback.message.delete()
-    await callback.answer()
-
-
-async def session_keeper():
-    """Keep sessions active"""
+async def session_monitor():
+    """Enhanced session monitor with persistent connections"""
     while True:
         try:
             accounts = await account_manager.get_all_accounts()
             for account in accounts:
                 phone = account["phone"]
                 try:
-                    client = await get_client(phone)
-                    try:
-                        me = await client.get_me()
-                        logger.info(f"Session active for {phone} ({me.first_name})")
-                    except Exception as e:
-                        logger.warning(f"Session check failed for {phone}, reconnecting...")
-                        await reconnect_client(phone)
-                except Exception as e:
-                    logger.error(f"Session error for {phone}: {type(e).__name__}: {str(e)}")
-                    await asyncio.sleep(60)
+                    if phone not in active_clients:
+                        logger.info(f"Connecting account {phone}...")
+                        await get_client(phone)
+                    else:
+                        client = active_clients[phone]
+                        try:
+                            # Проверяем соединение
+                            if not client.is_connected():
+                                logger.info(f"Reconnecting {phone}...")
+                                await safe_connect(client)
 
-            await asyncio.sleep(300)  # Check every 5 minutes
+                            # Проверяем авторизацию
+                            if not await client.is_user_authorized():
+                                logger.warning(f"Session unauthorized for {phone}, reauthorizing...")
+                                password = await account_manager.get_account_password(phone)
+                                if password:
+                                    await client.sign_in(password=password)
+                                else:
+                                    logger.error(f"No password for {phone}, can't reauthorize")
+                                    continue
+
+                            # Простое действие для поддержания соединения
+                            await client.get_me()
+                            logger.debug(f"Session active for {phone}")
+
+                        except Exception as e:
+                            logger.warning(f"Session check failed for {phone}: {e}")
+                            await reconnect_client(phone)
+                except Exception as e:
+                    logger.error(f"Session error for {phone}: {e}")
+                    await asyncio.sleep(30)
+
+            await asyncio.sleep(60)  # Проверка каждую минуту
 
         except Exception as e:
-            logger.error(f"Session keeper main loop error: {str(e)}")
+            logger.error(f"Session monitor error: {e}")
             await asyncio.sleep(60)
-
 
 async def connect_all_accounts():
     """Connect all accounts on startup"""
@@ -1311,12 +1729,24 @@ async def connect_all_accounts():
 
 async def on_startup():
     """Initialize application"""
+    global db, account_manager, group_manager, message_manager
+
+    # Initialize database connection
+    db = Database(DB_FILE)
+
+    # Initialize managers
+    account_manager = AccountManager(db)
+    group_manager = GroupManager(db)
+    message_manager = MessageManager(db)
+
+    # Connect all accounts
     await connect_all_accounts()
-    asyncio.create_task(session_keeper())
+
+    # Start session monitor
+    asyncio.create_task(session_monitor())
 
 
 async def on_shutdown():
-    """Cleanup before shutdown"""
     global scheduler_running, scheduler_task
 
     scheduler_running = False
@@ -1327,11 +1757,17 @@ async def on_shutdown():
         except asyncio.CancelledError:
             pass
 
-    for client in active_clients.values():
-        await client.disconnect()
+    # Больше не выходим из сессий, просто закрываем соединения
+    for phone, client in list(active_clients.items()):
+        try:
+            if client.is_connected():
+                await client.disconnect()
+        except Exception as e:
+            logger.error(f"Error disconnecting {phone}: {e}")
+        finally:
+            del active_clients[phone]
 
     db.close()
-
 
 async def main():
     """Main application entry point"""
@@ -1342,8 +1778,12 @@ async def main():
         # Start bot
         await dp.start_polling(bot)
 
+    except (KeyboardInterrupt, SystemExit):
+        logger.info("Bot stopped by user")
+
     except Exception as e:
         logger.critical(f"Fatal error: {e}", exc_info=True)
+
     finally:
         # Cleanup
         await on_shutdown()
